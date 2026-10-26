@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Thử trang quét KTX</title>
+<!-- D67 BƯỚC 0 — trang thử nghiệm: (1) camera quét trực tiếp ngoài Apps Script, (2) gửi về web app /exec qua doPost (viec: ping).
+     Không đọc / ghi dữ liệu thật. Thiết kế: docs/plans/D67-trang-quet-github-tich-tay-tai-anh-tem.md -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root { --xanh:#2563eb; --ok:#0ca30c; --do:#d03b3b; --vang:#b45309; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:#f3f4f6; color:#111827; }
+  .khung { max-width:520px; margin:0 auto; padding:16px; }
+  h1 { font-size:19px; margin:4px 0 2px; }
+  .phu { color:#6b7280; font-size:13px; }
+  .the { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin:12px 0; }
+  .the h2 { font-size:15px; margin:0 0 8px; }
+  label { font-size:12px; font-weight:700; color:#374151; display:block; margin-bottom:4px; }
+  input { width:100%; font:inherit; font-size:14px; padding:9px 10px; border:1px solid #d1d5db; border-radius:8px; }
+  button { font:inherit; font-weight:700; border:0; border-radius:10px; padding:12px; width:100%; margin-top:8px; background:#e5e7eb; color:#111827; min-height:48px; cursor:pointer; }
+  button.chinh { background:var(--xanh); color:#fff; }
+  #camera { width:100%; border-radius:10px; overflow:hidden; background:#0f172a; min-height:0; }
+  .kq { border-radius:10px; padding:10px; margin-top:8px; font-size:13.5px; word-break:break-all; white-space:pre-wrap; }
+  .kq.ok { background:#f0fdf4; border:2px solid #86efac; color:#166534; }
+  .kq.loi { background:#fef2f2; border:2px solid #fca5a5; color:#b91c1c; }
+  .kq.canh { background:#fffbeb; border:2px solid #fcd34d; color:#92400e; }
+  ul.kiem { list-style:none; padding:0; margin:0; }
+  ul.kiem li { padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; gap:8px; }
+  .dau { font-weight:800; }
+</style>
+</head>
+<body>
+<div class="khung">
+  <h1>Thử trang quét KTX — bước 0</h1>
+  <div class="phu">Chỉ để kiểm tra camera + gửi về web app. Không ghi điểm danh.</div>
+  <div id="canhBao"></div>
+
+  <div class="the">
+    <h2>1. Địa chỉ web app</h2>
+    <label for="api">URL web app (kết thúc bằng /exec)</label>
+    <input id="api" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+    <button class="chinh" id="nutPing">Gửi thử (ping)</button>
+    <div id="kqPing"></div>
+  </div>
+
+  <div class="the">
+    <h2>2. Camera tự quét</h2>
+    <div id="camera"></div>
+    <button class="chinh" id="nutCamera">Bật camera</button>
+    <div id="kqQuet"></div>
+  </div>
+
+  <div class="the">
+    <h2>Kết quả kiểm tra</h2>
+    <ul class="kiem">
+      <li><span>Gửi về web app (ping)</span><span class="dau" id="k1">—</span></li>
+      <li><span>Camera bật được</span><span class="dau" id="k2">—</span></li>
+      <li><span>Camera tự nhận mã QR</span><span class="dau" id="k3">—</span></li>
+      <li><span>Quét xong gửi về web app</span><span class="dau" id="k4">—</span></li>
+    </ul>
+    <button id="nutSaoChep">Sao chép kết quả để gửi cho người làm app</button>
+    <div class="phu" id="thongTinMay" style="margin-top:8px"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var nhatKy = [];
+  function ghi(s) { nhatKy.push(new Date().toLocaleTimeString('vi-VN') + ' ' + s); }
+  function $(id) { return document.getElementById(id); }
+  function hien(id, lop, chu) { $(id).innerHTML = ''; var d = document.createElement('div'); d.className = 'kq ' + lop; d.textContent = chu; $(id).appendChild(d); }
+  function danhDau(id, ok, chu) { $(id).textContent = ok ? '✓ ' + (chu || 'Được') : '✗ ' + (chu || 'Không'); $(id).style.color = ok ? '#0ca30c' : '#d03b3b'; ghi(id + ' ' + $(id).textContent); }
+
+  // ---- thông tin máy + cảnh báo trình duyệt trong Zalo / Facebook
+  var ua = navigator.userAgent || '';
+  $('thongTinMay').textContent = 'Trình duyệt: ' + ua + ' · HTTPS: ' + (window.isSecureContext ? 'có' : 'KHÔNG');
+  if (/Zalo|FBAN|FBAV|Instagram/i.test(ua)) {
+    hien('canhBao', 'canh', 'Đang mở trong trình duyệt của Zalo / Facebook — camera có thể không chạy. Bấm ⋯ → "Mở bằng trình duyệt" (Safari / Chrome).');
+  }
+
+  // ---- địa chỉ web app: #api=… trên link, hoặc nhớ lần trước
+  var api = '';
+  try { api = decodeURIComponent((location.hash.match(/[#&]api=([^&]+)/) || [])[1] || '') || localStorage.getItem('ktxApi') || ''; } catch (e) { /* bỏ qua */ }
+  $('api').value = api;
+  $('api').addEventListener('change', function () { try { localStorage.setItem('ktxApi', this.value.trim()); } catch (e) { /* bỏ qua */ } });
+
+  function goiApi(duLieu) {
+    var url = $('api').value.trim();
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url)) return Promise.reject(new Error('URL web app chưa đúng — phải có dạng https://script.google.com/macros/s/…/exec'));
+    var t0 = Date.now();
+    return fetch(url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(duLieu) })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (kq) { kq._ms = Date.now() - t0; return kq; });
+  }
+
+  $('nutPing').addEventListener('click', function () {
+    moKhoaAmThanh();
+    hien('kqPing', 'canh', 'Đang gửi…');
+    goiApi({ viec: 'ping', thu: 'ping từ trang quét' }).then(function (kq) {
+      if (!kq.ok) throw new Error(kq.loi || 'Web app trả lỗi');
+      hien('kqPing', 'ok', '✓ Web app trả lời sau ' + kq._ms + ' ms · build ' + kq.build + ' · giờ server ' + kq.luc);
+      danhDau('k1', true, kq._ms + ' ms');
+    }).catch(function (err) {
+      hien('kqPing', 'loi', '✗ ' + (err.message || err) + '\nKiểm tra: đúng URL /exec chưa, đã triển khai Phiên bản mới chưa.');
+      danhDau('k1', false, err.message);
+    });
+  });
+
+  // ---- âm thanh + rung (bíp như D66.2)
+  var am = null;
+  function moKhoaAmThanh() { try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; if (!am) am = new AC(); if (am.state === 'suspended') am.resume(); } catch (e) { /* bỏ qua */ } }
+  function bip(tot) {
+    try {
+      if (am) {
+        var t = am.currentTime + 0.02;
+        (tot ? [[1760, 0, 0.12]] : [[330, 0, 0.25], [262, 0.32, 0.3]]).forEach(function (b) {
+          var o = am.createOscillator(), g = am.createGain(); o.type = 'square'; o.frequency.value = b[0];
+          g.gain.setValueAtTime(0.0001, t + b[1]); g.gain.exponentialRampToValueAtTime(0.25, t + b[1] + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + b[1] + b[2]);
+          o.connect(g); g.connect(am.destination); o.start(t + b[1]); o.stop(t + b[1] + b[2] + 0.02);
+        });
+      }
+    } catch (e) { /* bỏ qua */ }
+    try { if (navigator.vibrate) navigator.vibrate(tot ? 80 : [200, 100, 200]); } catch (e) { /* bỏ qua */ }
+  }
+
+  // ---- camera tự quét
+  var quet = null, dangChay = false, lanCuoi = { chu: '', luc: 0 };
+  $('nutCamera').addEventListener('click', function () {
+    moKhoaAmThanh();
+    if (dangChay) { quet.stop().then(function () { dangChay = false; $('nutCamera').textContent = 'Bật camera'; }); return; }
+    if (!window.Html5Qrcode) { hien('kqQuet', 'loi', 'Chưa tải được thư viện quét — kiểm tra mạng.'); danhDau('k2', false, 'không tải được thư viện'); return; }
+    quet = quet || new window.Html5Qrcode('camera');
+    quet.start({ facingMode: 'environment' }, { fps: 10, qrbox: function (w, h) { var c = Math.floor(Math.min(w, h) * 0.7); return { width: c, height: c }; } }, function (chu) {
+      var bayGio = Date.now();
+      if (chu === lanCuoi.chu && bayGio - lanCuoi.luc < 4000) return; // cùng 1 mã trong 4 giây → bỏ qua
+      lanCuoi = { chu: chu, luc: bayGio };
+      bip(true);
+      danhDau('k3', true, 'đọc được');
+      hien('kqQuet', 'ok', '✓ Đọc được: ' + chu + '\nĐang gửi về web app…');
+      goiApi({ viec: 'ping', thu: chu }).then(function (kq) {
+        if (!kq.ok) throw new Error(kq.loi);
+        hien('kqQuet', 'ok', '✓ Đọc được: ' + chu + '\n✓ Web app nhận được sau ' + kq._ms + ' ms (trả lại: ' + kq.tiengVong.slice(0, 80) + ')');
+        danhDau('k4', kq.tiengVong === chu.slice(0, 300), kq._ms + ' ms');
+      }).catch(function (err) {
+        bip(false);
+        hien('kqQuet', 'loi', '✓ Đọc được: ' + chu + '\n✗ Gửi lỗi: ' + (err.message || err));
+        danhDau('k4', false, err.message);
+      });
+    }, function () { /* khung hình chưa có mã — bỏ qua */ }).then(function () {
+      dangChay = true; $('nutCamera').textContent = 'Tắt camera'; danhDau('k2', true);
+      hien('kqQuet', 'canh', 'Đưa mã QR (tem giường hoặc bất kỳ mã QR nào) vào khung.');
+    }).catch(function (err) {
+      var chu = String((err && (err.name || err.message)) || err);
+      hien('kqQuet', 'loi', '✗ Không bật được camera: ' + chu + '\nNếu bị hỏi quyền camera → chọn Cho phép. Đang mở trong Zalo → mở bằng Safari / Chrome.');
+      danhDau('k2', false, chu);
+    });
+  });
+
+  $('nutSaoChep').addEventListener('click', function () {
+    var chu = ['Kết quả thử trang quét KTX — bước 0',
+      'Ping: ' + $('k1').textContent, 'Camera bật: ' + $('k2').textContent, 'Tự nhận mã: ' + $('k3').textContent, 'Gửi sau khi quét: ' + $('k4').textContent,
+      $('thongTinMay').textContent, '', 'Nhật ký:'].concat(nhatKy).join('\n');
+    var xong = function () { $('nutSaoChep').textContent = '✓ Đã sao chép — dán vào tin nhắn'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(chu).then(xong, function () { window.prompt('Sao chép đoạn này:', chu); });
+    else window.prompt('Sao chép đoạn này:', chu);
+  });
+})();
+</script>
+</body>
+</html>
