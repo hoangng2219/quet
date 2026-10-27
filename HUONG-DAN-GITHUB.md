@@ -24,13 +24,8 @@ Tài khoản GitHub `hoangng2219` → địa chỉ trang sẽ là **https://hoan
 3. 1–2 phút sau trang trên GitHub tự cập nhật. Trên điện thoại tải lại trang (kéo xuống để làm mới).
 - Nếu sửa trực tiếp trên web GitHub thì trước khi sửa trong VS Code bấm **Sync Changes** (= pull về) để không bị lệch.
 
-## D. Lấy địa chỉ web app (/exec)
-Apps Script Editor → **Triển khai** → **Quản lý các bản triển khai** → bản Web app đang dùng → sao chép **URL ứng dụng web** (kết thúc bằng `/exec`).
-Phải triển khai **Phiên bản mới** của build **2026-10-26.1** trước — bản cũ chưa có cổng `ping`.
-
-## E. Thử trên điện thoại (bước 0)
-1. Mở `https://hoangng2219.github.io/quet/` bằng **Safari (iPhone)** / **Chrome (Android)** — KHÔNG mở trong Zalo.
-   (Hoặc ghép sẵn: `https://hoangng2219.github.io/quet/#api=<URL /exec>`.)
-2. Dán URL /exec vào ô "URL web app" → **Gửi thử (ping)** → phải hiện "✓ Web app trả lời sau … ms · build 2026-10-26.1".
-3. **Bật camera** → cho phép camera → đưa tem giường (hoặc mã QR bất kỳ) vào khung → phải bíp + "✓ Đọc được … ✓ Web app nhận được".
-4. **Sao chép kết quả** → dán gửi lại. Nên thử 1 iPhone + 1 Android.
+## D. Dùng trang quét (từ build 2026-10-27.1)
+- Không cần dán URL nữa: app → **Quản lý tài khoản** → **Tạo link quét** → quét mã QR hiện ra bằng camera điện thoại (hoặc "Sao chép link" rồi dán vào Safari / Chrome).
+  Link có dạng `https://hoangng2219.github.io/quet/#k=<khoá riêng>&api=<web app>` — mỗi BQL 1 link, thu hồi trong app.
+- Apps Script cần Script Property `URL_TRANG_QUET = https://hoangng2219.github.io/quet/` (làm 1 lần).
+- Kiểm thử: `docs/uat/UAT-D67-trang-quet-tich-tay-tai-anh.md`.
