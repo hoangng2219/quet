@@ -58,8 +58,33 @@
   .day-duoi { position:fixed; left:0; right:0; bottom:0; z-index:6; background:#fff; border-top:1px solid var(--vien); padding:10px 12px; padding-bottom:max(10px, env(safe-area-inset-bottom)); }
   .day-duoi .trong { max-width:560px; margin:0 auto; display:flex; gap:8px; }
   .lop { position:fixed; inset:0; z-index:20; background:rgba(15,23,42,.5); display:flex; align-items:flex-end; justify-content:center; }
-  .tam { background:#fff; width:100%; max-width:560px; max-height:88vh; overflow:auto; border-radius:16px 16px 0 0; padding:14px; padding-bottom:max(14px, env(safe-area-inset-bottom)); }
-  .tam h3 { margin:0 0 6px; font-size:16px; }
+  /* tấm trượt: đầu + chân cố định, thân cuộn — danh sách dài vẫn thấy nút */
+  .tam { background:#fff; width:100%; max-width:560px; max-height:88vh; display:flex; flex-direction:column; border-radius:16px 16px 0 0; overflow:hidden; }
+  .tam-dau { padding:14px 14px 8px; border-bottom:1px solid #f1f5f9; }
+  .tam-dau h3 { margin:0; font-size:16px; } .tam-dau .phu { margin-top:2px; }
+  .tam-than { padding:4px 14px 10px; overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; min-height:0; }
+  .tam-chan { padding:10px 14px; padding-bottom:max(10px, env(safe-area-inset-bottom)); border-top:1px solid var(--vien); background:#fff; }
+  .tam-chan .hang-nut { margin-top:0; }
+  .tam-loi { color:#b91c1c; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; margin-bottom:8px; }
+  /* nút "Không thấy / Phép / Có mặt" — 3 ô bằng nhau, xuống dòng dưới tên (màn hẹp không tràn) */
+  .xong-dong { padding:10px 0; border-bottom:1px solid #f1f5f9; }
+  .xong-ten { font-weight:700; font-size:14px; margin-bottom:6px; overflow-wrap:anywhere; }
+  .seg { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+  .seg button { min-height:42px; border-radius:10px; border:1px solid #d1d5db; background:#fff; font-weight:700; font-size:13px; color:#374151; padding:4px; }
+  .seg button.on[data-tt="KhongThay"] { background:#fee2e2; border-color:#fca5a5; color:#b91c1c; }
+  .seg button.on[data-tt="VangPhep"] { background:#fef3c7; border-color:#fcd34d; color:#92400e; }
+  .seg button.on[data-tt="CoMat"] { background:#dcfce7; border-color:#86efac; color:#166534; }
+  /* đang tải / đang gửi */
+  #tienTrinh { position:fixed; top:0; left:0; right:0; height:3px; z-index:40; overflow:hidden; pointer-events:none; opacity:0; transition:opacity .2s; }
+  #tienTrinh.chay { opacity:1; }
+  #tienTrinh i { position:absolute; top:0; bottom:0; width:40%; background:var(--xanh); animation:chay 1.1s ease-in-out infinite; }
+  @keyframes chay { from { left:-40%; } to { left:100%; } }
+  .xoay { display:inline-block; width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:xoay .7s linear infinite; vertical-align:-2px; flex:none; }
+  @keyframes xoay { to { transform:rotate(360deg); } }
+  .sk { background:linear-gradient(90deg, #eef0f3 25%, #f8fafc 50%, #eef0f3 75%); background-size:200% 100%; animation:sk 1.2s ease-in-out infinite; border-radius:10px; }
+  @keyframes sk { from { background-position:200% 0; } to { background-position:-200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .sk, .xoay, #tienTrinh i { animation:none; } }
+  .ng > span:first-child { min-width:0; overflow-wrap:anywhere; } .ng .tt { flex:none; }
   .chon { display:flex; align-items:center; gap:10px; border:1px solid #d1d5db; border-radius:10px; padding:11px; margin-bottom:8px; font-weight:700; background:#fff; width:100%; text-align:left; min-height:46px; }
   .chon.on { border-color:var(--xanh); background:#eff6ff; color:#1d4ed8; }
   .cb { display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid #f1f5f9; min-height:46px; }
@@ -73,6 +98,7 @@
 </style>
 </head>
 <body>
+<div id="tienTrinh" aria-hidden="true"><i></i></div>
 <div class="dau"><button class="lui" id="nutLui" aria-label="Quay lại" hidden>‹</button><b id="tieuDe">Quét tem KTX</b><span class="mang" id="mang">● Có mạng</span></div>
 <div class="than" id="than"></div>
 <div class="day-duoi" id="dayDuoi" hidden><div class="trong" id="dayDuoiTrong"></div></div>
@@ -91,7 +117,7 @@
   if (thamSo.k && K === thamSo.k) luu('ktxK', K);
   if (thamSo.api && API === thamSo.api) luu('ktxApi', API);
   var TIEN_TO = 'ktx_' + K.slice(0, 8) + '_';
-  var S = { ten: '', dots: [], maDot: thamSo.dot || '', dot: null, dsPhong: [], maPhong: '', phong: null, man: '', hangCho: [], dangGui: false, ketQuaGui: null };
+  var S = { ten: '', dots: [], maDot: thamSo.dot || '', dot: null, dsPhong: [], maPhong: '', phong: null, man: '', hangCho: [], dangGui: false, ketQuaGui: null, dangGuiMa: {} };
   try { S.hangCho = JSON.parse(doc(TIEN_TO + 'hangCho') || '[]'); } catch (e) { S.hangCho = []; }
   var phongMoDau = thamSo.phong || '';
   var $ = function (id) { return document.getElementById(id); };
@@ -101,6 +127,7 @@
   var ICON = { tem: '📷', anh: '🖼', tay: '✍' };
   function gio(iso) { var d = new Date(iso); return isNaN(d.getTime()) ? '' : ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function ngayNgan(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); if (!m) return ''; var t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay(); return ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][t] + ' ' + m[3] + '/' + m[2]; }
+  function skThe(n) { return new Array(n + 1).join('<div class="the"><div class="sk" style="height:18px;width:70%"></div><div class="sk" style="height:12px;width:45%;margin-top:8px"></div><div class="sk" style="height:46px;margin-top:12px"></div></div>'); }
   function maId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function toast(chu) { var t = $('toast'); t.innerHTML = '<div>' + thoat(chu) + '</div>'; clearTimeout(toast.h); toast.h = setTimeout(function () { t.innerHTML = ''; }, 2600); }
 
@@ -126,7 +153,13 @@
 
   // ------------------------------------------------------------------ gọi web app
   function laLoiMang(err) { return !err || !err.ma && /Failed to fetch|NetworkError|Load failed|network|aborted|abort|Hết thời gian|HTTP 5/i.test(String(err.name + ' ' + err.message)); }
+  var soDangTai = 0;
+  function tienTrinh(d) { soDangTai = Math.max(0, soDangTai + d); $('tienTrinh').classList.toggle('chay', soDangTai > 0); }
   function goi(duLieu) {
+    tienTrinh(1);
+    return goiTho(duLieu).then(function (x) { tienTrinh(-1); return x; }, function (e) { tienTrinh(-1); throw e; });
+  }
+  function goiTho(duLieu) {
     duLieu.k = K;
     var ctl = window.AbortController ? new AbortController() : null;
     var hen = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
@@ -173,6 +206,7 @@
     S.dangGui = true;
     var lo = S.hangCho.slice(0, 150);
     return goi({ viec: 'ghi', luot: lo }).then(function (r) {
+      if (r.cd) cdBiet = r.cd;
       var daGui = {}; lo.forEach(function (l) { daGui[l.id] = true; });
       S.hangCho = S.hangCho.filter(function (l) { return !daGui[l.id]; }); luuHangCho();
       var kq = r.kq || [];
@@ -212,7 +246,7 @@
   function diToi(man, them) { if (them !== false) try { history.pushState({ man: man, maDot: S.maDot, maPhong: S.maPhong }, ''); } catch (e) { /* bỏ qua */ } hienMan(man); }
   window.addEventListener('popstate', function (ev) {
     var st = ev.state || { man: 'ds' };
-    if ($('lop').innerHTML) { dongLop(); try { history.pushState({ man: S.man, maDot: S.maDot, maPhong: S.maPhong }, ''); } catch (e) { /* bỏ qua */ } return; }
+    if ($('lop').innerHTML) { if (!lopDangGui) dongLop(); try { history.pushState({ man: S.man, maDot: S.maDot, maPhong: S.maPhong }, ''); } catch (e) { /* bỏ qua */ } return; }
     S.maDot = st.maDot || ''; S.maPhong = st.maPhong || ''; hienMan(st.man || 'ds');
   });
   $('nutLui').addEventListener('click', function () { history.back(); });
@@ -247,7 +281,7 @@
     var h = S.ten ? '<div class="phu" style="margin-bottom:8px">Đang dùng link của <b>' + thoat(S.ten) + '</b></div>' : '';
     h += veHangCho();
     if (loi && !S.dots.length) h += '<div class="bao loi">' + thoat(laLoiMang(loi) ? 'Chưa kết nối được web app — kiểm tra mạng rồi kéo xuống để tải lại.' : loi.message) + '</div>';
-    if (dangTai && !S.dots.length) h += '<div class="rong">Đang tải đợt kiểm tra…</div>';
+    if (dangTai && !S.dots.length) h += skThe(2);
     else if (!S.dots.length && !loi) h += '<div class="rong">Chưa có đợt kiểm tra nào đang chạy.<br>Mở đợt trong app: Điểm danh → BQL kiểm tra phòng → Mở đợt kiểm tra.</div>';
     S.dots.forEach(function (d) {
       var tt = docTaiTruoc(d.MaDot);
@@ -262,7 +296,7 @@
     $('than').innerHTML = h;
   }
   function taiTruoc(maDot, nut) {
-    if (nut) { nut.disabled = true; nut.textContent = 'Đang tải…'; }
+    if (nut) { nut.disabled = true; nut.innerHTML = '<i class="xoay"></i> Đang tải…'; }
     return goi({ viec: 'taiTruoc', maDot: maDot }).then(function (r) {
       r.luuLuc = new Date().toISOString();
       luu(TIEN_TO + 'tt_' + maDot, JSON.stringify(r));
@@ -277,14 +311,15 @@
     if (tt) { S.dot = tt.dot; S.dsPhong = tt.dsPhong; }
     veDot();
     goi({ viec: 'dot', maDot: S.maDot }).then(function (r) {
+      if (r.dot.trangThai === 'DaDong') { hetDot('Đợt kiểm tra này đã kết thúc'); return; }
       S.dot = r.dot; S.dsPhong = r.phong;
       if (S.man === 'dot') veDot();
       if (phongMoDau && S.dsPhong.some(function (p) { return String(p.MaPhong) === String(phongMoDau); })) { S.maPhong = phongMoDau; phongMoDau = ''; diToi('phong'); }
-    }).catch(function (err) { if (S.man === 'dot' && !S.dsPhong.length) $('than').innerHTML = veHangCho() + '<div class="bao loi">' + thoat(laLoiMang(err) ? 'Mất mạng và đợt này chưa được "Tải trước".' : err.message) + '</div>'; });
+    }).catch(function (err) { if (laDotMat(err)) { hetDot('Đợt kiểm tra này đã bị huỷ'); return; } if (S.man === 'dot' && !S.dsPhong.length) $('than').innerHTML = veHangCho() + '<div class="bao loi">' + thoat(laLoiMang(err) ? 'Mất mạng và đợt này chưa được "Tải trước".' : err.message) + '</div>'; });
   }
   function veDot() {
     $('tieuDe').textContent = S.dot ? S.dot.moTa : 'Đợt kiểm tra';
-    if (!S.dot) { $('than').innerHTML = veHangCho() + '<div class="rong">Đang tải phòng…</div>'; return; }
+    if (!S.dot) { $('than').innerHTML = veHangCho() + '<div class="sk" style="height:14px;width:60%;margin:4px 0 12px"></div><div class="luoi">' + new Array(12).join('<div class="sk" style="height:56px"></div>') + '</div>'; return; }
     var nhom = {}, thuTu = [];
     S.dsPhong.forEach(function (p) { var k = 'Khu ' + p.TenKhu + ' › ' + p.TenDay; if (!nhom[k]) { nhom[k] = []; thuTu.push(k); } nhom[k].push(p); });
     if (!S.dayChon || !nhom[S.dayChon]) S.dayChon = thuTu.find(function (k) { return nhom[k].some(function (p) { return !p.xongLuc; }); }) || thuTu[0];
@@ -312,24 +347,28 @@
   function taiPhong() {
     if (S.man !== 'phong') return Promise.resolve();
     return goi({ viec: 'phong', maDot: S.maDot, maPhong: S.maPhong }).then(function (r) {
+      if (S.man !== 'phong') return;
+      if (r.dot.trangThai === 'DaDong') { hetDot('Đợt kiểm tra này đã kết thúc'); return; }
+      if (!r.trongDot) { hetDot(r.chuyenSang ? 'Phòng này đã được đưa sang đợt kiểm tra mới' : 'Phòng này đã được bỏ ra khỏi đợt kiểm tra'); return; }
       S.phong = r;
       $('tieuDe').textContent = r.phong.TenPhong + ' · ' + r.phong.TenDay;
       if (S.man === 'phong') veDs();
-    }).catch(function (err) { if (!S.phong && S.man === 'phong') $('vungDs').innerHTML = '<div class="bao loi">' + thoat(laLoiMang(err) ? 'Mất mạng và đợt này chưa được "Tải trước" — vẫn quét được, lượt quét sẽ gửi khi có mạng.' : err.message) + '</div>'; });
+    }).catch(function (err) { if (laDotMat(err)) { hetDot('Đợt kiểm tra này đã bị huỷ'); return; } if (!S.phong && S.man === 'phong') $('vungDs').innerHTML = '<div class="bao loi">' + thoat(laLoiMang(err) ? 'Mất mạng và đợt này chưa được "Tải trước" — vẫn quét được, lượt quét sẽ gửi khi có mạng.' : err.message) + '</div>'; });
   }
   function choCua(ma) { return S.hangCho.filter(function (l) { return l.maPhong === S.maPhong && (l.ma === ma || (l.dsMa || []).indexOf(ma) > -1 || l._ma === ma); }).pop(); }
   function veDs() {
     if (S.man !== 'phong') return;
     $('vungCho').innerHTML = veHangCho();
     var p = S.phong;
-    if (!p) { if (!$('vungDs').innerHTML) $('vungDs').innerHTML = '<div class="rong">Đang tải danh sách…</div>'; return; }
+    if (!p) { if (!$('vungDs').innerHTML) $('vungDs').innerHTML = '<div class="the" style="padding:8px 10px">' + new Array(6).join('<div class="sk" style="height:40px;margin:8px 0"></div>') + '</div>'; return; }
     if (!p.trongDot) { $('vungDs').innerHTML = '<div class="bao loi">Phòng này không còn thuộc đợt kiểm tra.</div>'; return; }
     var daCo = p.ds.filter(function (x) { return x.kt; }).length;
     var h = '<div class="h" style="margin:4px 0 2px"><b>Trong phòng</b><span class="phu">' + daCo + ' / ' + p.ds.length + ' đã kiểm tra' + (p.xongLuc ? ' · ✓ xong' : '') + '</span></div>';
     if (p.diemDanhHomNay && p.diemDanhHomNay.trangThai === 'DangMo') h += '<div class="phu">Đợt công nhân điểm danh đang mở — quét "Có mặt" ghi luôn cho người chưa điểm danh.</div>';
     h += '<div class="the" style="padding:4px 10px">' + p.ds.map(function (x) {
       var cho = choCua(x.MaCongNhan);
-      var nhan = cho ? '<span class="tt tt-cho">⏳ ' + gio(cho.luc) + '</span>'
+      var nhan = S.dangGuiMa[x.MaCongNhan] ? '<span class="tt tt-cho"><i class="xoay"></i> Đang gửi</span>'
+        : cho ? '<span class="tt tt-cho">⏳ ' + gio(cho.luc) + '</span>'
         : x.kt ? '<span class="tt ' + (LOP_TT[x.kt.tt] || '') + '">' + (ICON[x.kt.cach] || '') + ' ' + (x.kt.tt === 'CoMat' ? '✓' : thoat(TEN_TT[x.kt.tt] || '')) + ' ' + gio(x.kt.luc) + '</span>'
         : '<span class="tt tt-chua">Chưa</span>';
       var dd = x.dd ? ({ Tu: 'tự quét', Ho: 'được hộ' + (x.dd.boiTen ? ' (' + x.dd.boiTen + ')' : ''), BQLQuet: 'BQL quét', BQLKiemTra: 'vắng (BQL không thấy)' }[x.dd.nguon] || { Chua: 'chưa', Vang: 'vắng', VangPhep: 'vắng có phép', ChoDuyet: 'báo vắng chờ duyệt', CoMat: 'có mặt' }[x.dd.tt] || '') : '';
@@ -351,7 +390,12 @@
   function ghiLuot(l, khiXong) {
     l.id = l.id || maId(); l.luc = l.luc || new Date().toISOString(); l.maDot = S.maDot; l.maPhong = l.maPhong === undefined ? S.maPhong : l.maPhong;
     if (!coMang) { themHangCho(l); if (khiXong) khiXong({ ok: true, ket: 'cho' }); veDs(); return; }
-    goi({ viec: 'ghi', luot: [l] }).then(function (r) { var x = (r.kq || [])[0] || { ok: false, loi: 'Không có kết quả' }; if (khiXong) khiXong(x); setTimeout(taiPhong, 300); })
+    goi({ viec: 'ghi', luot: [l] }).then(function (r) {
+      if (r.cd) cdBiet = r.cd;
+      var x = (r.kq || [])[0] || { ok: false, loi: 'Không có kết quả' };
+      if (khiXong) khiXong(x);
+      if (!x.ok && /kết thúc|Không tìm thấy đợt|không thuộc đợt|chưa mở đợt/i.test(x.loi || '')) taiLaiManHienTai(); else setTimeout(taiPhong, 300);
+    })
       .catch(function (err) {
         if (laLoiMang(err)) { themHangCho(l); if (khiXong) khiXong({ ok: true, ket: 'cho' }); veDs(); }
         else if (khiXong) khiXong({ ok: false, loi: err.message });
@@ -393,9 +437,11 @@
         baoKq({ ok: true, ket: 'daCo', HoTen: ngDaBiet.HoTen, tt: ngDaBiet.kt ? ngDaBiet.kt.tt : 'CoMat', luc: ngDaBiet.kt ? ngDaBiet.kt.luc : choCua(ngDaBiet.MaCongNhan).luc });
         return;
       }
-      $('vungKq').innerHTML = '<div class="bao canh">Đang gửi…' + (ngDaBiet ? ' ' + thoat(ngDaBiet.HoTen) : '') + '</div>';
+      $('vungKq').innerHTML = '<div class="bao canh"><i class="xoay"></i> Đang gửi…' + (ngDaBiet ? ' ' + thoat(ngDaBiet.HoTen) : '') + '</div>';
       var l = { loai: 'quet', chuoi: chuoi, _ma: biet ? biet.ma : '' };
+      if (biet) { S.dangGuiMa[biet.ma] = true; veDs(); }
       ghiLuot(l, function (x) {
+        if (biet) delete S.dangGuiMa[biet.ma];
         if (x.ket === 'cho') {
           bip('ok');
           $('vungKq').innerHTML = '<div class="bao ok">✓ ' + thoat(ngDaBiet ? ngDaBiet.HoTen : 'Đã quét') + ' — lưu tạm ' + gio(l.luc) + '<small>' + (biet ? 'Kiểm tra theo danh sách đã tải trước. ' : 'Tem chưa có trong dữ liệu tải trước — sẽ kiểm tra khi gửi. ') + 'Tem thu hồi chỉ biết khi gửi lên.</small></div>';
@@ -409,38 +455,64 @@
   }
 
   // ------------------------------------------------------------------ tấm trượt: sửa 1 người / tích tay / xong phòng
-  function moLop(html) { $('lop').innerHTML = '<div class="lop" data-viec="dongLop"><div class="tam" role="dialog">' + html + '</div></div>'; }
-  function dongLop() { $('lop').innerHTML = ''; }
+  // Đầu + chân cố định, thân cuộn. Gửi từ tấm trượt: GIỮ tấm mở, nút chính quay "Đang lưu…", khoá mọi nút; xong mới đóng; lỗi → báo ngay trong tấm.
+  function moLop(dau, than, chan) {
+    $('lop').innerHTML = '<div class="lop" data-viec="dongLop"><div class="tam" role="dialog" aria-modal="true"><div class="tam-dau">' + dau + '</div>' +
+      '<div class="tam-than">' + than + '</div><div class="tam-chan"><div class="tam-loi" hidden></div>' + chan + '</div></div></div>';
+  }
+  var lopDangGui = false;
+  function dongLop() { if (lopDangGui) return; var co = !!$('lop').innerHTML; $('lop').innerHTML = ''; if (co && canTaiLai) { canTaiLai = false; taiLaiManHienTai(); } }
   function lyDoHtml(cls) { return '<select class="' + cls + '"><option value="">— lý do vắng —</option>' + ((S.phong && S.phong.lyDoVang) || []).map(function (l) { return '<option value="' + thoat(l.MaLyDo) + '">' + thoat(l.TenLyDo) + '</option>'; }).join('') + '</select>'; }
+  /** Gửi 1 lượt từ tấm trượt: khoá tấm + hiện "Đang lưu…" trên nút; xử lý(x) chạy khi có kết quả (kể cả lưu tạm khi mất mạng). */
+  function guiTuLop(nut, l, dsMa, xuLy) {
+    var tam = $('lop').querySelector('.tam'); if (!tam) return;
+    var loi = tam.querySelector('.tam-loi'); loi.hidden = true;
+    var chuCu = nut.innerHTML;
+    lopDangGui = true;
+    tam.querySelectorAll('button, input, select').forEach(function (x) { x.disabled = true; });
+    nut.innerHTML = '<i class="xoay"></i> Đang lưu…';
+    (dsMa || []).forEach(function (m) { S.dangGuiMa[m] = true; }); veDs();
+    ghiLuot(l, function (x) {
+      lopDangGui = false;
+      (dsMa || []).forEach(function (m) { delete S.dangGuiMa[m]; });
+      if (x.ket === 'cho' || x.ok) { dongLop(); xuLy(x); veDs(); return; }
+      tam.querySelectorAll('button, input, select').forEach(function (y) { y.disabled = false; });
+      if (tam.querySelector('.ttCb')) demTay();
+      nut.innerHTML = chuCu;
+      loi.textContent = moTaKetQua(x).chu; loi.hidden = false;
+      bip('loi'); veDs();
+    });
+  }
   function moSua(ma) {
     var x = S.phong && S.phong.ds.find(function (y) { return y.MaCongNhan === ma; }); if (!x) return;
     var hien = x.kt ? x.kt.tt : '';
     var canh = x.dd && x.dd.tt === 'CoMat' && (x.dd.nguon === 'Tu' || x.dd.nguon === 'Ho') ? '<div class="bao canh" style="font-size:13px">Người này đã "Có mặt" (' + (x.dd.nguon === 'Ho' ? 'được hộ' : 'tự quét') + ') — chọn "Không có ở giường" sẽ đổi thành Vắng + ghi nghi gian lận.</div>' : '';
-    moLop('<h3>' + thoat(x.HoTen) + '</h3><div class="phu" style="margin-bottom:8px">' + thoat(x.MaNhanVien || '') + (hien ? ' · hiện: ' + thoat(TEN_TT[hien]) : '') + '</div>' + canh +
-      ['CoMat', 'KhongThay', 'VangPhep'].map(function (t) { return '<button class="chon' + (t === hien ? ' on' : '') + '" data-viec="chonTT" data-tt="' + t + '">' + (t === 'CoMat' ? '✓ ' : t === 'KhongThay' ? '✗ ' : '') + TEN_TT[t] + '</button>'; }).join('') +
-      lyDoHtml('suaLyDo') + '<input type="text" class="suaGhiChu" maxlength="200" placeholder="Ghi chú (không bắt buộc)">' +
-      '<div class="hang-nut"><button class="nut" data-viec="dongLop">Huỷ</button><button class="nut xanh" data-viec="luuSua" data-ma="' + thoat(ma) + '" data-truoc="' + thoat(hien) + '">Lưu</button></div>' +
-      (hien === 'CoMat' ? '<div class="hang-nut"><button class="nut do" data-viec="hoanTac" data-ma="' + thoat(ma) + '">↶ Bỏ "Có mặt"</button></div>' : ''));
+    moLop('<h3>' + thoat(x.HoTen) + '</h3><div class="phu">' + thoat(x.MaNhanVien || '') + (hien ? ' · hiện: ' + thoat(TEN_TT[hien]) : ' · chưa kiểm tra') + '</div>',
+      canh + ['CoMat', 'KhongThay', 'VangPhep'].map(function (t) { return '<button class="chon' + (t === hien ? ' on' : '') + '" data-viec="chonTT" data-tt="' + t + '">' + (t === 'CoMat' ? '✓ ' : t === 'KhongThay' ? '✗ ' : '') + TEN_TT[t] + '</button>'; }).join('') +
+        '<div class="suaLyDoVung"' + (hien === 'VangPhep' ? '' : ' hidden') + '>' + lyDoHtml('suaLyDo') + '</div><input type="text" class="suaGhiChu" maxlength="200" placeholder="Ghi chú (không bắt buộc)">' +
+        (hien === 'CoMat' ? '<button class="nut do" style="margin-top:6px" data-viec="hoanTac" data-ma="' + thoat(ma) + '">↶ Bỏ "Có mặt"</button>' : ''),
+      '<div class="hang-nut"><button class="nut" data-viec="dongLop">Huỷ</button><button class="nut xanh" data-viec="luuSua" data-ma="' + thoat(ma) + '" data-truoc="' + thoat(hien) + '">Lưu</button></div>');
   }
   function moTichTay() {
-    var chua = S.phong ? S.phong.ds.filter(function (x) { return !x.kt && !choCua(x.MaCongNhan); }) : [];
-    moLop('<h3>✍ Tích tay</h3><div class="phu" style="margin-bottom:6px">Chọn người BQL thấy tận mắt (không cần lý do khi Có mặt).</div>' +
-      (chua.length ? '<label class="cb cb-ca"><input type="checkbox" class="ttCa"> <b>Chọn cả ' + chua.length + ' người chưa kiểm tra</b></label>' +
-        chua.map(function (x) { return '<label class="cb"><input type="checkbox" class="ttCb" value="' + thoat(x.MaCongNhan) + '"> ' + thoat(x.HoTen) + ' <span class="phu">' + thoat(x.MaNhanVien || '') + '</span></label>'; }).join('') +
-        lyDoHtml('ttLyDo') +
-        '<div class="hang-nut"><button class="nut xanh" data-viec="ghiTay" data-tt="CoMat" disabled>✓ Có mặt (<span class="ttDem">0</span>)</button></div>' +
-        '<div class="hang-nut"><button class="nut" data-viec="ghiTay" data-tt="VangPhep" disabled>Vắng có phép</button><button class="nut do" data-viec="ghiTay" data-tt="KhongThay" disabled>Không có ở giường</button></div>'
-        : '<div class="rong">Mọi người đã có kết quả.</div>') +
-      '<div class="hang-nut"><button class="nut vien" data-viec="dongLop">Đóng</button></div>');
+    var chua = S.phong ? S.phong.ds.filter(function (x) { return !x.kt && !choCua(x.MaCongNhan) && !S.dangGuiMa[x.MaCongNhan]; }) : [];
+    moLop('<h3>✍ Tích tay</h3><div class="phu">Chọn người BQL thấy tận mắt (không cần lý do khi Có mặt).</div>',
+      chua.length ? '<label class="cb cb-ca"><input type="checkbox" class="ttCa"> <b>Chọn cả ' + chua.length + ' người chưa kiểm tra</b></label>' +
+        chua.map(function (x) { return '<label class="cb"><input type="checkbox" class="ttCb" value="' + thoat(x.MaCongNhan) + '"> <span style="min-width:0;overflow-wrap:anywhere">' + thoat(x.HoTen) + ' <span class="phu">' + thoat(x.MaNhanVien || '') + '</span></span></label>'; }).join('') +
+        '<div style="margin-top:6px">' + lyDoHtml('ttLyDo') + '<div class="phu">Lý do chỉ cần khi chọn "Vắng có phép".</div></div>'
+        : '<div class="rong">Mọi người đã có kết quả.</div>',
+      chua.length ? '<div class="hang-nut"><button class="nut xanh" data-viec="ghiTay" data-tt="CoMat" disabled>✓ Có mặt (<span class="ttDem">0</span>)</button></div>' +
+        '<div class="hang-nut" style="margin-top:8px"><button class="nut" data-viec="ghiTay" data-tt="VangPhep" disabled>Vắng có phép</button><button class="nut do" data-viec="ghiTay" data-tt="KhongThay" disabled>Không có ở giường</button></div>' +
+        '<div class="hang-nut" style="margin-top:8px"><button class="nut vien" data-viec="dongLop">Đóng</button></div>'
+        : '<div class="hang-nut"><button class="nut vien" data-viec="dongLop">Đóng</button></div>');
   }
   function moXong() {
     var chua = S.phong ? S.phong.ds.filter(function (x) { return !x.kt && !choCua(x.MaCongNhan); }) : [];
-    moLop('<h3>Xong phòng ' + thoat(S.phong ? S.phong.phong.TenPhong : '') + '</h3>' +
-      (chua.length ? '<div class="phu" style="margin-bottom:6px">' + chua.length + ' người chưa có kết quả — mặc định "Không có ở giường". Đổi từng người nếu cần:</div>' + chua.map(function (x) {
+    moLop('<h3>Xong phòng ' + thoat(S.phong ? S.phong.phong.TenPhong : '') + '</h3><div class="phu">' + (chua.length ? chua.length + ' người chưa có kết quả — mặc định "Không có ở giường". Đổi từng người nếu cần.' : 'Mọi người đã có kết quả.') + '</div>',
+      chua.map(function (x) {
         var md = x.baoVang && x.baoVang.duyet ? 'VangPhep' : 'KhongThay';
-        return '<div class="cb" data-ma="' + thoat(x.MaCongNhan) + '" style="justify-content:space-between"><span>' + thoat(x.HoTen) + '</span><span style="display:flex;gap:4px">' +
-          [['KhongThay', 'Không thấy'], ['VangPhep', 'Phép'], ['CoMat', 'Có mặt']].map(function (o) { return '<button class="chip xongTT' + (o[0] === md ? ' on' : '') + '" data-viec="xongTT" data-tt="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</span></div>';
-      }).join('') : '<div class="phu">Mọi người đã có kết quả.</div>') +
+        return '<div class="xong-dong" data-ma="' + thoat(x.MaCongNhan) + '"><div class="xong-ten">' + thoat(x.HoTen) + (x.MaNhanVien ? ' <span class="phu" style="font-weight:500">· ' + thoat(x.MaNhanVien) + '</span>' : '') + '</div><div class="seg" role="radiogroup">' +
+          [['KhongThay', 'Không thấy'], ['VangPhep', 'Phép'], ['CoMat', 'Có mặt']].map(function (o) { return '<button class="xongTT' + (o[0] === md ? ' on' : '') + '" role="radio" aria-checked="' + (o[0] === md) + '" data-viec="xongTT" data-tt="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>';
+      }).join(''),
       '<div class="hang-nut"><button class="nut" data-viec="dongLop">Quay lại</button><button class="nut xanh" data-viec="xacNhanXong">Xác nhận xong</button></div>');
   }
   function demTay() {
@@ -464,54 +536,82 @@
     else if (viec === 'chonDay') { S.dayChon = b.getAttribute('data-day'); veDot(); }
     else if (viec === 'vaoPhong') { S.maPhong = b.getAttribute('data-phong'); diToi('phong'); }
     else if (viec === 'batCam') batCamera();
-    else if (viec === 'guiNgay') guiHangCho();
-    else if (viec === 'sua') moSua(b.getAttribute('data-ma'));
+    else if (viec === 'veDsDot') { S.maDot = ''; S.maPhong = ''; try { history.replaceState({ man: 'ds' }, ''); } catch (e) { /* bỏ qua */ } hienMan('ds'); }
+    else if (viec === 'guiNgay') { b.disabled = true; b.innerHTML = '<i class="xoay"></i> Đang gửi…'; guiHangCho(); }
+    else if (viec === 'sua') { if (!S.dangGuiMa[b.getAttribute('data-ma')]) moSua(b.getAttribute('data-ma')); }
     else if (viec === 'tichTay') moTichTay();
     else if (viec === 'xongPhong') moXong();
-    else if (viec === 'chonTT') { b.parentNode.querySelectorAll('.chon').forEach(function (x) { x.classList.toggle('on', x === b); }); }
-    else if (viec === 'xongTT') { b.parentNode.querySelectorAll('.xongTT').forEach(function (x) { x.classList.toggle('on', x === b); }); }
+    else if (viec === 'chonTT') {
+      b.parentNode.querySelectorAll('.chon').forEach(function (x) { x.classList.toggle('on', x === b); });
+      var v = document.querySelector('.suaLyDoVung'); if (v) v.hidden = b.getAttribute('data-tt') !== 'VangPhep';
+    } else if (viec === 'xongTT') { b.parentNode.querySelectorAll('.xongTT').forEach(function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); }); }
     else if (viec === 'luuSua') {
-      var on = document.querySelector('.tam .chon.on'); if (!on) { toast('Chọn kết quả'); return; }
+      var on = document.querySelector('.tam .chon.on'), loiS = document.querySelector('.tam-loi');
+      if (!on) { loiS.textContent = 'Chọn kết quả.'; loiS.hidden = false; return; }
       var t = on.getAttribute('data-tt'), ly = (document.querySelector('.suaLyDo') || {}).value || '';
-      if (t === 'VangPhep' && !ly) { toast('Chọn lý do vắng'); return; }
+      if (t === 'VangPhep' && !ly) { loiS.textContent = 'Chọn lý do vắng.'; loiS.hidden = false; return; }
       var maS = b.getAttribute('data-ma');
-      dongLop();
-      ghiLuot({ loai: 'sua', ma: maS, tt: t, truoc: b.getAttribute('data-truoc'), maLyDo: ly, ghiChu: (document.querySelector('.suaGhiChu') || {}).value || '' }, function (x) {
+      guiTuLop(b, { loai: 'sua', ma: maS, tt: t, truoc: b.getAttribute('data-truoc'), maLyDo: ly, ghiChu: (document.querySelector('.suaGhiChu') || {}).value || '' }, [maS], function (x) {
         if (x.ket === 'cho') { toast('⏳ Đã lưu tạm — gửi khi có mạng'); return; }
-        if (x.ok && x.ket === 'daGhi') capNhatCucBo(maS, t, 'tay', new Date().toISOString());
-        baoKq(x.ok && x.ket === 'daGhi' ? { ok: true, ket: 'daGhi', soGhi: 1 } : x); veDs();
+        if (x.ket === 'daGhi') capNhatCucBo(maS, t, 'tay', new Date().toISOString());
+        baoKq(x.ket === 'daGhi' ? { ok: true, ket: 'daGhi', soGhi: 1 } : x);
       });
     } else if (viec === 'hoanTac') {
       var maH = b.getAttribute('data-ma');
-      dongLop();
-      ghiLuot({ loai: 'sua', ma: maH, tt: '', truoc: 'CoMat' }, function (x) {
+      var xongH = function (x) {
         if (x.ket === 'cho') { toast('⏳ Đã lưu tạm — gửi khi có mạng'); return; }
         if (x.ok) { capNhatCucBo(maH, '', '', ''); $('vungKq').innerHTML = '<div class="bao canh">↶ Đã hoàn tác</div>'; } else baoKq(x);
         veDs();
-      });
+      };
+      if (b.closest('.tam')) guiTuLop(b, { loai: 'sua', ma: maH, tt: '', truoc: 'CoMat' }, [maH], xongH);
+      else { b.disabled = true; b.innerHTML = '<i class="xoay"></i> Đang hoàn tác…'; S.dangGuiMa[maH] = true; veDs(); ghiLuot({ loai: 'sua', ma: maH, tt: '', truoc: 'CoMat' }, function (x) { delete S.dangGuiMa[maH]; xongH(x); }); }
     } else if (viec === 'ghiTay') {
       var tt = b.getAttribute('data-tt'), ds = [].map.call(document.querySelectorAll('.ttCb:checked'), function (x) { return x.value; });
       var lyT = (document.querySelector('.ttLyDo') || {}).value || '';
-      if (tt === 'VangPhep' && !lyT) { toast('Chọn lý do vắng'); return; }
-      dongLop();
-      ghiLuot({ loai: 'tay', dsMa: ds, tt: tt, maLyDo: lyT }, function (x) {
+      if (tt === 'VangPhep' && !lyT) { var lT = document.querySelector('.tam-loi'); lT.textContent = 'Chọn lý do vắng (ô ngay trên).'; lT.hidden = false; return; }
+      guiTuLop(b, { loai: 'tay', dsMa: ds, tt: tt, maLyDo: lyT }, ds, function (x) {
         if (x.ket === 'cho') { toast('⏳ Đã lưu tạm ' + ds.length + ' người — gửi khi có mạng'); return; }
-        if (x.ok) ds.forEach(function (m) { if (!(x.boQua || []).some(function (q) { return q === m; })) capNhatCucBo(m, tt, 'tay', new Date().toISOString()); });
-        baoKq(x); veDs();
+        ds.forEach(function (m) { if (!(x.boQua || []).some(function (q) { return q === m; })) capNhatCucBo(m, tt, 'tay', new Date().toISOString()); });
+        baoKq(x);
       });
     } else if (viec === 'xacNhanXong') {
       var dsX = {};
-      document.querySelectorAll('.tam .cb[data-ma]').forEach(function (r) { var c = r.querySelector('.xongTT.on'); dsX[r.getAttribute('data-ma')] = { tt: c ? c.getAttribute('data-tt') : 'KhongThay' }; });
-      dongLop();
-      ghiLuot({ loai: 'xong', ds: dsX }, function (x) {
+      document.querySelectorAll('.tam .xong-dong[data-ma]').forEach(function (r) { var c = r.querySelector('.xongTT.on'); dsX[r.getAttribute('data-ma')] = { tt: c ? c.getAttribute('data-tt') : 'KhongThay' }; });
+      guiTuLop(b, { loai: 'xong', ds: dsX }, Object.keys(dsX), function (x) {
         if (x.ket === 'cho') { toast('⏳ Đã lưu tạm "Xong phòng" — gửi khi có mạng'); history.back(); return; }
-        if (x.ok) { bip('ok'); toast('✓ Xong phòng'); history.back(); } else baoKq(x);
+        bip('ok'); toast('✓ Xong phòng'); history.back();
       });
     }
   });
 
-  // tự làm mới phòng đang mở (BQL khác cùng đi / sửa trong app) — 10 giây / lần khi có mạng, không mở tấm trượt
-  setInterval(function () { if (S.man === 'phong' && coMang && !document.hidden && !$('lop').innerHTML) taiPhong(); else if (coMang && S.hangCho.length) guiHangCho(); }, 10000);
+  // D67.1: ~5 giây / lần hỏi "dữ liệu có đổi không" (chỉ 1 mã phiên bản — rất nhẹ). Đổi (BQL kết thúc / huỷ / mở đợt, BQL khác ghi) → tải lại màn đang mở.
+  // Đang mở tấm trượt thì để dành, đóng tấm mới tải. Quay lại tab / mở lại app → hỏi ngay.
+  var cdBiet = '', canTaiLai = false, dangHoi = false;
+  function taiLaiManHienTai() { if (S.man === 'ds') taiDs(); else if (S.man === 'dot') taiDot(); else if (S.man === 'phong') taiPhong(); }
+  function kiemTraNgay(epTaiLai) {
+    if (dangHoi || !coMang || document.hidden || S.man === 'khoa' || !K || !API) return;
+    dangHoi = true;
+    goiTho({ viec: 'phienBan' }).then(function (r) {
+      dangHoi = false;
+      var doi = (cdBiet && r.cd !== cdBiet) || epTaiLai; cdBiet = r.cd;
+      if (!doi) return;
+      if ($('lop').innerHTML) { canTaiLai = true; return; }
+      taiLaiManHienTai();
+    }, function () { dangHoi = false; });
+  }
+  setInterval(function () { kiemTraNgay(false); if (coMang && S.hangCho.length) guiHangCho(); }, 5000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) kiemTraNgay(true); });
+  function laDotMat(err) { return err && /Không tìm thấy đợt/i.test(err.message || ''); }
+  /** Đợt đang xem đã kết thúc / bị huỷ / phòng bị bỏ ra → tắt camera, báo rõ, về danh sách đợt. Lượt chờ gửi của đợt này giữ nguyên (gửi lên sẽ báo lỗi từng lượt). */
+  function hetDot(chu) {
+    tatCamera(); lopDangGui = false; $('lop').innerHTML = '';
+    luu(TIEN_TO + 'tt_' + S.maDot, null);
+    S.man = 'hetDot'; S.dot = null; S.dsPhong = []; S.phong = null;
+    $('dayDuoi').hidden = true; $('nutLui').hidden = true; $('tieuDe').textContent = 'Quét tem KTX';
+    bip('canh');
+    $('than').innerHTML = '<div class="khoa"><div class="icon">🏁</div><h2>' + thoat(chu) + '</h2><p class="phu">Không quét / ghi thêm được cho đợt này. Chọn đợt khác đang chạy.</p>' +
+      '<button class="nut xanh" style="max-width:320px;margin:12px auto 0" data-viec="veDsDot">Về danh sách đợt</button></div>';
+  }
 
   // ------------------------------------------------------------------ khởi động
   if (/Zalo|FBAN|FBAV|Instagram/i.test(navigator.userAgent || '')) toast('Đang mở trong Zalo / Facebook — nếu camera không chạy, mở bằng Safari / Chrome.');
@@ -522,6 +622,7 @@
   try { history.replaceState({ man: 'ds' }, ''); } catch (e) { /* bỏ qua */ }
   if (thamSo.dot) { S.maDot = thamSo.dot; hienMan('ds'); diToi('dot'); } else hienMan('ds');
   if (coMang) guiHangCho();
+  kiemTraNgay(false);
 })();
 </script>
 </body>
