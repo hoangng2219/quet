@@ -588,12 +588,15 @@
   // Đang mở tấm trượt thì để dành, đóng tấm mới tải. Quay lại tab / mở lại app → hỏi ngay.
   var cdBiet = '', canTaiLai = false, dangHoi = false;
   function taiLaiManHienTai() { if (S.man === 'ds') taiDs(); else if (S.man === 'dot') taiDot(); else if (S.man === 'phong') taiPhong(); }
+  // D67.3: vẫn hỏi khi đang "Mất mạng" — 1 lượt lỗi thoáng qua (khoá màn hình giữa lượt gửi, sóng chập chờn) trước đây làm dừng hẳn việc đồng bộ
+  // vì chỉ sự kiện 'online' mới bật lại, mà máy không mất mạng thật thì không bao giờ phát sự kiện đó. Hỏi được lại → coi như vừa có mạng → tải lại màn.
   function kiemTraNgay(epTaiLai) {
-    if (dangHoi || !coMang || document.hidden || S.man === 'khoa' || !K || !API) return;
+    if (dangHoi || document.hidden || S.man === 'khoa' || !K || !API) return;
     dangHoi = true;
+    var vuaMatMang = !coMang;
     goiTho({ viec: 'phienBan' }).then(function (r) {
       dangHoi = false;
-      var doi = (cdBiet && r.cd !== cdBiet) || epTaiLai; cdBiet = r.cd;
+      var doi = (cdBiet && r.cd !== cdBiet) || epTaiLai || vuaMatMang; cdBiet = r.cd;
       if (!doi) return;
       if ($('lop').innerHTML) { canTaiLai = true; return; }
       taiLaiManHienTai();
