@@ -373,7 +373,7 @@
         : '<span class="tt tt-chua">Chưa</span>';
       var dd = x.dd ? ({ Tu: 'tự quét', Ho: 'được hộ' + (x.dd.boiTen ? ' (' + x.dd.boiTen + ')' : ''), BQLQuet: 'BQL quét', BQLKiemTra: 'vắng (BQL không thấy)' }[x.dd.nguon] || { Chua: 'chưa', Vang: 'vắng', VangPhep: 'vắng có phép', ChoDuyet: 'báo vắng chờ duyệt', CoMat: 'có mặt' }[x.dd.tt] || '') : '';
       return '<button class="ng" data-viec="sua" data-ma="' + thoat(x.MaCongNhan) + '"><span><b><i class="cham ' + (x.GioiTinh === 'Nữ' ? 'nu' : 'nam') + '"></i>' + thoat(x.HoTen) + '</b>' +
-        '<span class="phu">' + thoat(x.MaNhanVien || '—') + (dd ? ' · điểm danh: ' + thoat(dd) : '') + (x.kt && x.kt.boiTen ? ' · ' + thoat(String(x.kt.boiTen).replace(/^BQL /, '')) : '') + (x.thieuTem ? ' · <span style="color:#b91c1c">' + thoat(x.thieuTem) + '</span>' : '') + '</span></span>' + nhan + '</button>';
+        '<span class="phu">' + (x.choGiu ? 'chưa có hồ sơ' : thoat(x.MaNhanVien || '—')) + (dd ? ' · điểm danh: ' + thoat(dd) : '') + (x.kt && x.kt.boiTen ? ' · ' + thoat(String(x.kt.boiTen).replace(/^BQL /, '')) : '') + (x.thieuTem ? ' · <span style="color:#b91c1c">' + thoat(x.thieuTem) + '</span>' : '') + '</span></span>' + nhan + '</button>';
     }).join('') + '</div>';
     $('vungDs').innerHTML = h;
   }
