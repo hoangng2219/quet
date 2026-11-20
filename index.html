@@ -234,7 +234,7 @@
     S.dangGui = true;
     var lo = S.hangCho.slice(0, 150);
     return goi({ viec: 'ghi', luot: lo }).then(function (r) {
-      if (r.cd) cdBiet = r.cd;
+      if (r.cd) cdBiet = r.cd; if (r.dm) dmBiet = r.dm;
       var daGui = {}; lo.forEach(function (l) { daGui[l.id] = true; });
       S.hangCho = S.hangCho.filter(function (l) { return !daGui[l.id]; }); luuHangCho();
       var kq = r.kq || [];
@@ -430,7 +430,7 @@
     l.id = l.id || maId(); l.luc = l.luc || new Date().toISOString(); l.maDot = S.maDot; l.maPhong = l.maPhong === undefined ? S.maPhong : l.maPhong;
     if (!coMang) { themHangCho(l); if (khiXong) khiXong({ ok: true, ket: 'cho' }); veDs(); return; }
     goi({ viec: 'ghi', luot: [l] }).then(function (r) {
-      if (r.cd) cdBiet = r.cd;
+      if (r.cd) cdBiet = r.cd; if (r.dm) dmBiet = r.dm;
       var x = (r.kq || [])[0] || { ok: false, loi: 'Không có kết quả' };
       if (khiXong) khiXong(x);
       if (!x.ok && /kết thúc|Không tìm thấy đợt|không thuộc đợt|chưa mở đợt/i.test(x.loi || '')) taiLaiManHienTai(); else setTimeout(taiPhong, 300);
@@ -610,9 +610,14 @@
     else if (!dangTai && !loi) h += '<div class="rong">Chưa có Dãy nào.</div>';
     $('than').innerHTML = h;
   }
+  function lamMoiDemNgam() { // D77: vào Dãy / phòng khi có sóng → hỏi lại máy chủ (trước chỉ dùng bản đã tải → app đếm / xếp giường xong trang quét không thấy)
+    if (!coMang || coChoDay(S.maDay)) return;
+    var maDay = S.maDay;
+    taiDem(maDay, true).then(function () { if (S.maDay === maDay && !$('lop').innerHTML) veLai(); }, function () { /* mất sóng — giữ bản trong máy */ });
+  }
   function vaoDayDem() {
     var x = docDem(S.maDay);
-    if (x) { veDayDem(); return; }
+    if (x) { veDayDem(); lamMoiDemNgam(); return; }
     $('tieuDe').textContent = 'Đếm sĩ số';
     $('than').innerHTML = skThe(2);
     taiDem(S.maDay, true).then(function () { if (S.man === 'demDay') veDayDem(); })
@@ -631,7 +636,7 @@
     $('than').innerHTML = h;
   }
   function phongDem() { var x = docDem(S.maDay); return x ? x.phong.filter(function (p) { return p.MaPhong === S.maPhongDem; })[0] : null; }
-  function vaoPhongDem() { vePhongDem(); }
+  function vaoPhongDem() { vePhongDem(); lamMoiDemNgam(); }
   function oGiuong(g) {
     var cn = g.cn, lop = 'gi' + (g.hong ? ' hong' : !cn ? ' trong' : cn.cg ? ' cg' : '') + (cn && cn.cho ? ' cho' : '');
     var chu = g.hong ? 'Giường hỏng' : g.giu && !cn ? 'Giữ cho cặp vợ chồng' : !cn ? '+ Nhập tên' : thoat(cn.ten) + (cn.cg ? '<span class="tag-cg">chưa HS</span>' : '');
@@ -828,7 +833,7 @@
 
   // D67.1: ~5 giây / lần hỏi "dữ liệu có đổi không" (chỉ 1 mã phiên bản — rất nhẹ). Đổi (BQL kết thúc / huỷ / mở đợt, BQL khác ghi) → tải lại màn đang mở.
   // Đang mở tấm trượt thì để dành, đóng tấm mới tải. Quay lại tab / mở lại app → hỏi ngay.
-  var cdBiet = '', canTaiLai = false, dangHoi = false;
+  var cdBiet = '', dmBiet = '', canTaiLai = false, dangHoi = false; // D77: dmBiet — giường / người / chỗ giữ (app đếm sĩ số, xếp giường…)
   function taiLaiManHienTai() {
     if (S.man === 'ds') taiDs(); else if (S.man === 'dot') taiDot(); else if (S.man === 'phong') taiPhong();
     else if ((S.man === 'demDay' || S.man === 'demPhong') && coMang && !coChoDay(S.maDay)) taiDem(S.maDay, true).then(veLai, function () {}); // D76: còn lượt chờ gửi thì giữ bản trong máy
@@ -841,7 +846,8 @@
     var vuaMatMang = !coMang;
     goiTho({ viec: 'phienBan' }).then(function (r) {
       dangHoi = false;
-      var doi = (cdBiet && r.cd !== cdBiet) || epTaiLai || vuaMatMang; cdBiet = r.cd;
+      var laDem = S.man === 'demDay' || S.man === 'demPhong';
+      var doi = (cdBiet && r.cd !== cdBiet) || (laDem && dmBiet && r.dm && r.dm !== dmBiet) || epTaiLai || vuaMatMang; cdBiet = r.cd; if (r.dm) dmBiet = r.dm;
       if (!doi) return;
       if ($('lop').innerHTML) { canTaiLai = true; return; }
       taiLaiManHienTai();
