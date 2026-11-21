@@ -178,6 +178,19 @@
   .day-duoi .trong { display:grid; grid-template-columns:auto auto minmax(0, 1fr); }
   .day-duoi .trong .nut { white-space:nowrap; font-size:14.5px; }
   .day-duoi .nut-phu { padding:10px 12px; }
+  /* D77.2: mỗi bộ = 2 dòng giường (trên / dưới) chiếm cả bề ngang bộ — tên không bị bóp còn 1 ô */
+  .sdq.sdp-vo { padding:2px 12px 4px; }
+  .sdq .sdp-bo-trong { flex-direction:column !important; padding:2px; gap:2px; }
+  .gi.gi-m { flex:1 1 0; min-height:0; width:100%; flex-direction:row; align-items:center; justify-content:flex-start; gap:3px; padding:0 4px; overflow:hidden; border-radius:5px; }
+  .gi.gi-m small { flex:none; font-size:10px; }
+  .gi.gi-m b { flex:1 1 auto; min-width:0; font-size:12.5px; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+  .gi.gi-m.trong { justify-content:flex-start; } .gi.gi-m.trong b { font-size:18px; text-align:center; }
+  .sdq .sdp-doc .gi.gi-m { flex-direction:column; align-items:flex-start; justify-content:center; gap:0; padding:2px 3px; }
+  .sdq .sdp-doc .gi.gi-m { overflow:visible; padding:2px 1px; }
+  .sdq .sdp-doc .gi.gi-m b { width:100%; font-size:11px; letter-spacing:-.4px; overflow:visible; text-overflow:clip; }
+  .sdq .sdp-doc .gi.gi-m.trong b { text-align:left; }
+  .sdq .sdq-phai .gi.gi-m { align-items:flex-end; } .sdq .sdq-phai .gi.gi-m b { direction:rtl; text-align:right; }
+  .sdq .sdp-doc .gi.gi-m b { position:relative; z-index:2; text-shadow:0 0 2px #fff, 0 0 2px #fff; }
 </style>
 </head>
 <body>
@@ -849,6 +862,7 @@
     var o = n.g[m] || {}, cn = o.cn;
     var lop = 'gi' + (nho ? ' gi-m' : '') + (o.hong ? ' hong' : !cn ? ' trong' : (cn.cg || cn.moi) ? ' cg' : '') + (o.xn ? ' xn' : '');
     var chu = o.hong ? 'Hỏng' : o.giu && !cn ? (nho ? '💑' : 'Giữ cho cặp') : !cn ? (nho ? '+' : '+ Nhập tên') : thoat(nho ? String(cn.ten || '').trim().split(/\s+/).pop() : cn.ten) + (!nho && (cn.cg || cn.moi) ? '<span class="tag-cg">chưa HS</span>' : '');
+    if (nho) return '<button class="' + lop + '" data-viec="giuong" data-g="' + m + '" aria-label="' + thoat(m + ' — ' + (cn ? cn.ten : o.hong ? 'hỏng' : 'trống, bấm để ghi')) + '"><small>' + m + '</small><b>' + chu + '</b></button>'; // đã xác nhận = viền xanh (không thêm ✓ cho đỡ chật)
     return '<button class="' + lop + '" data-viec="giuong" data-g="' + m + '" title="' + thoat(m + (cn ? ' — ' + cn.ten : '')) + '"><small>' + (nho ? '' : '<i class="cham ' + (cn && cn.gt === 'Nữ' ? 'nu' : 'nam') + '"' + (cn ? '' : ' style="visibility:hidden"') + '></i>') +
       m + (nho ? '' : ' · ' + viCua(m)) + (o.xn ? ' ✓' : '') + '</small><b>' + chu + '</b></button>';
   }
@@ -858,10 +872,11 @@
     boXep(n).forEach(function (b) {
       var vt = sd.vt[khoaBo(b)];
       if (!vt) { khay.push(b); return; }
-      tren += '<div class="sdp-bo sdp-' + (vt.xoay === 'doc' ? 'doc' : 'ngang') + (b.keThem ? ' sdp-ke-them' : '') + '" style="' + SD.viTri(sd, vt) + '"><div class="sdp-bo-trong">' + maCuaBo(b).map(function (m) { return oGiuong(n, m, true); }).join('') + '</div></div>';
+      var phai = vt.xoay === 'doc' && vt.x >= sd.cot / 2; // bộ dọc sát tường phải: tên dài tràn vào giữa phòng (không đè lên tường)
+      tren += '<div class="sdp-bo sdp-' + (vt.xoay === 'doc' ? 'doc' : 'ngang') + (phai ? ' sdq-phai' : '') + (b.keThem ? ' sdp-ke-them' : '') + '" style="' + SD.viTri(sd, vt) + '"><div class="sdp-bo-trong">' + maCuaBo(b).slice().reverse().map(function (m) { return oGiuong(n, m, true); }).join('') + '</div></div>'; // giường trên (B) phía trên giường dưới (A): 2 dòng, tên dùng cả bề ngang bộ
     });
-    var hep = (window.innerWidth || 400) < 640; // điện thoại: ô cao gấp đôi → giường đủ lớn để bấm + đọc tên
-    return SD.khung(sd, tren, { toiDa: hep ? 90 : 60, tyLe: hep ? 2 : 1.3, lop: 'sdq' }) + (khay.length ? '<div class="phu" style="margin:10px 2px 4px">Chưa đặt lên sơ đồ</div>' + khay.map(function (b) { return veBoThe(n, b); }).join('') : '');
+    var hep = (window.innerWidth || 400) < 640; // điện thoại: ô cao → mỗi giường 1 dòng đủ cao để bấm
+    return SD.khung(sd, tren, { toiDa: hep ? 90 : 64, tyLe: hep ? 2.4 : 1.4, lop: 'sdq' }) + (khay.length ? '<div class="phu" style="margin:10px 2px 4px">Chưa đặt lên sơ đồ</div>' + khay.map(function (b) { return veBoThe(n, b); }).join('') : '');
   }
   function vePhongDem() {
     var p = phongDem();
