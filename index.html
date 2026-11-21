@@ -115,6 +115,41 @@
   .tong-si b { font-size:20px; }
   .nu-canh { background:#fef2f2; border:2px solid #fca5a5; color:#b91c1c; border-radius:10px; padding:8px 10px; font-size:13px; font-weight:700; margin:6px 0; }
   textarea { width:100%; font:inherit; font-size:15px; padding:10px; border:1px solid #d1d5db; border-radius:10px; margin:6px 0; min-height:64px; }
+  /* D77: sơ đồ phòng (cùng class sdp-* với app — Stylesheet.html) + bản kiểm đếm */
+  .sdp-vo { padding:4px 18px; margin-bottom:6px; }
+  .sdp-phong { position:relative; margin:0 auto; border:4px solid #374151; border-radius:3px; background-color:#fff; }
+  .sdp-phong.sdp-luoi { background-image:linear-gradient(to right, #e9ecf1 1px, transparent 1px), linear-gradient(to bottom, #e9ecf1 1px, transparent 1px); }
+  .sdp-cua { position:absolute; width:8px; background:#fff; border:2px dashed #f59e0b; z-index:4; }
+  .sdp-cua-trai { left:-6px; } .sdp-cua-phai { right:-6px; }
+  .sdp-cua span { position:absolute; top:50%; transform:translateY(-50%); writing-mode:vertical-rl; font-size:10px; font-weight:700; color:#b45309; white-space:nowrap; }
+  .sdp-cua-trai span { right:calc(100% + 3px); } .sdp-cua-phai span { left:calc(100% + 3px); }
+  .sdp-o { position:absolute; z-index:1; cursor:pointer; }
+  .sdp-o:active { background:#dbeafe; }
+  .sdp-bo { position:absolute; padding:2px; z-index:3; -webkit-user-select:none; user-select:none; }
+  .sdp-bo-trong { width:100%; height:100%; border-radius:6px; border:1.5px solid #94a3b8; background:#f1f5f9; display:flex; align-items:stretch; justify-content:center; gap:2px; padding:2px; }
+  .sdp-doc .sdp-bo-trong { flex-direction:column; }
+  .sdp-ke-them .sdp-bo-trong { border-style:dashed; border-color:#60a5fa; background:#eff6ff; }
+  .sdp-chon .sdp-bo-trong { border:2.5px solid var(--xanh); box-shadow:0 0 0 3px #dbeafe; }
+  .sdp-so { font-weight:800; font-size:13px; align-self:center; }
+  .gi.gi-m { min-height:0; height:100%; flex:1 1 0; min-width:0; padding:1px 2px; border-radius:5px; align-items:center; justify-content:center; text-align:center; gap:0; overflow:hidden; }
+  .gi.gi-m small { font-size:9.5px; line-height:1.1; white-space:nowrap; } .gi.gi-m b { font-size:10px; line-height:1.15; white-space:nowrap; letter-spacing:-.3px; overflow:visible; max-width:100%; }
+  .gi.gi-m { overflow:visible; }
+  .gi.xn { border:2px solid var(--ok); }
+  .seg2 { grid-template-columns:1fr 1fr; margin-bottom:10px; }
+  .seg2 button.on { background:#111827; color:#fff; border-color:#111827; }
+  .sd-cong-cu { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .sd-cong-cu .nut { flex:1 1 0; }
+  .sd-dem { flex:1 1 0; display:flex; align-items:center; justify-content:space-between; gap:4px; border:1px solid #d1d5db; border-radius:10px; background:#fff; padding:2px 4px 2px 10px; font-weight:700; font-size:13px; }
+  .sd-dem button { width:44px; height:42px; border:0; background:#f3f4f6; border-radius:8px; font-size:20px; font-weight:700; }
+  .sd-thanh { background:#f8fafc; border:1px solid var(--vien); border-radius:10px; padding:8px 10px; margin-bottom:10px; }
+  .sd-thanh.co { background:#eff6ff; border-color:#bfdbfe; }
+  .sd-thanh-chu { font-size:13px; min-height:2.8em; line-height:1.4; }
+  .sd-thanh-nut { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; margin-top:6px; }
+  .sd-thanh-nut button { min-height:44px; border-radius:10px; border:1px solid #d1d5db; background:#fff; font-weight:700; font-size:13px; padding:4px; }
+  .sd-thanh-nut button:disabled { opacity:.4; }
+  .sd-khay { background:#fff; border:1.5px dashed #cbd5e1; border-radius:10px; padding:8px 10px; }
+  .sd-khay-ds { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .day-duoi .trong .nut { padding:10px 6px; }
 </style>
 </head>
 <body>
@@ -124,6 +159,103 @@
 <div class="day-duoi" id="dayDuoi" hidden><div class="trong" id="dayDuoiTrong"></div></div>
 <div id="lop"></div>
 <div id="toast" aria-live="polite"></div>
+<!-- KTXSoDo: chép từ src/frontend/SoDoPhong.html bằng tools/chep-so-do-trang-quet.cjs — KHÔNG sửa tay -->
+<script>
+  window.KTXSoDo = (function () {
+    var ICON = '<svg class="ico-so-do" viewBox="0 0 20 16" width="18" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 5V1h18v4M1 11v4h18v-4"/><rect x="4" y="3.4" width="5" height="3" rx=".6"/><rect x="11" y="3.4" width="5" height="3" rx=".6"/><rect x="4" y="9.6" width="5" height="3" rx=".6"/><rect x="11" y="9.6" width="5" height="3" rx=".6"/></svg>';
+    function thoat(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function kho(xoay) { return xoay === 'doc' ? { w: 1, h: 2 } : { w: 2, h: 1 }; }
+    function tenBo(k) { var p = String(k).split(':'); return p[0] === 'Tang' ? 'Bộ ' + p[1] : 'Bộ đơn C' + p[1]; }
+    function soNgan(k) { var p = String(k).split(':'); return p[0] === 'Tang' ? p[1] : 'C' + p[1]; }
+    /** Vị trí chuẩn theo chiều kim đồng hồ (giống _oChuanSoDo_). */
+    function oChuan(cot, hang) {
+      var s = [], n = Math.floor((cot - 2) / 2), x;
+      for (x = 0; x < n; x++) s.push({ x: 1 + x * 2, y: 0, xoay: 'ngang' });
+      s.push({ x: cot - 1, y: 1, xoay: 'doc' });
+      for (x = n - 1; x >= 0; x--) s.push({ x: 1 + x * 2, y: hang - 1, xoay: 'ngang' });
+      s.push({ x: 0, y: 1, xoay: 'doc' });
+      return s;
+    }
+    /** dsBo: [{ k, keThem }] đã xếp tầng rồi đơn theo số → { 'Tang:1': vt } (bộ kê thêm / thừa không có vị trí). */
+    function xepChuan(dsBo, cot, hang) {
+      var o = oChuan(cot, hang), vt = {}, j = 0;
+      dsBo.forEach(function (b) { if (!b.keThem && j < o.length) vt[b.k] = o[j++]; });
+      return vt;
+    }
+    /** '' nếu đặt được bộ k ở vt trong sd = { cot, hang, vt }; không thì câu báo lỗi. */
+    function kiemTra(sd, k, vt) {
+      var q = kho(vt.xoay);
+      if (vt.x < 0 || vt.y < 0 || vt.x + q.w > sd.cot || vt.y + q.h > sd.hang) return 'Ra ngoài phòng';
+      var de = Object.keys(sd.vt).filter(function (k2) {
+        if (k2 === k) return false;
+        var v = sd.vt[k2], r = kho(v.xoay);
+        return vt.x < v.x + r.w && v.x < vt.x + q.w && vt.y < v.y + r.h && v.y < vt.y + q.h;
+      })[0];
+      return de ? 'Đè lên ' + tenBo(de) : '';
+    }
+    function viTri(sd, vt) {
+      var q = kho(vt.xoay), p = function (a, b) { return (a / b * 100).toFixed(4) + '%'; };
+      return 'left:' + p(vt.x, sd.cot) + ';top:' + p(vt.y, sd.hang) + ';width:' + p(q.w, sd.cot) + ';height:' + p(q.h, sd.hang);
+    }
+    /**
+     * khung(sd, noiDung, opts) — HTML khung phòng (tường, 2 cửa ở cạnh ngắn, lưới) bọc noiDung (các .sdp-bo đã định vị).
+     * opts.o = true: thêm lớp ô bấm được (.sdp-o[data-x][data-y]) cho chế độ sửa; opts.toiDa = bề rộng tối đa 1 ô (px);
+     * opts.tyLe = chiều cao 1 ô / chiều rộng (mặc định 1; điện thoại dùng > 1 để giường đủ cao ghi tên).
+     */
+    function khung(sd, noiDung, opts) {
+      opts = opts || {};
+      var o = '', cuaTop = Math.max(0, sd.hang - 3) / sd.hang * 100, cuaCao = Math.min(2, sd.hang) / sd.hang * 100;
+      if (opts.o) for (var y = 0; y < sd.hang; y++) for (var x = 0; x < sd.cot; x++) {
+        o += '<div class="sdp-o" data-x="' + x + '" data-y="' + y + '" style="' + viTri(sd, { x: x, y: y, xoay: 'o' }).replace(/width:[^;]+;height:[^;]+/, 'width:' + (100 / sd.cot).toFixed(4) + '%;height:' + (100 / sd.hang).toFixed(4) + '%') + '"></div>';
+      }
+      return '<div class="sdp-vo' + (opts.lop ? ' ' + opts.lop : '') + '"><div class="sdp-phong' + (opts.o ? ' sdp-luoi' : '') + '" style="max-width:' + (sd.cot * (opts.toiDa || 56)) + 'px;' +
+        'background-size:' + (100 / sd.cot).toFixed(4) + '% ' + (100 / sd.hang).toFixed(4) + '%">' +
+        '<div style="padding-top:' + (sd.hang / sd.cot * (opts.tyLe || 1) * 100).toFixed(4) + '%"></div>' +
+        '<div class="sdp-cua sdp-cua-trai" style="top:' + cuaTop + '%;height:' + cuaCao + '%"><span>Cửa</span></div>' +
+        '<div class="sdp-cua sdp-cua-phai" style="top:' + cuaTop + '%;height:' + cuaCao + '%"><span>Cửa</span></div>' +
+        o + (noiDung || '') + '</div></div>';
+    }
+    /**
+     * veCongKhai(el, sdCk, opts) — trang công khai. sdCk từ server (soDoCongKhai_): { cot, hang, bo: [{ k, vt, keThem, g: [{ ma, vi, co, ten? }] }] }.
+     * opts.toi = mã giường của chủ tem (tô xanh, bộ khác mờ). opts.bam = bấm bộ xem ai nằm (QR cửa phòng). Trả HTML đã gắn vào el.
+     */
+    function veCongKhai(el, sdCk, opts) {
+      if (!el) return;
+      opts = opts || {};
+      if (!sdCk || !sdCk.bo || !sdCk.bo.length) { el.innerHTML = ''; return; }
+      var sd = { cot: sdCk.cot, hang: sdCk.hang, vt: {} }, chon = '';
+      function boCua(k) { return sdCk.bo.filter(function (b) { return b.k === k; })[0]; }
+      function ve() {
+        var bo = sdCk.bo.filter(function (b) { return b.vt; }).map(function (b) {
+          var cuaToi = opts.toi && b.g.some(function (g) { return g.ma === opts.toi; });
+          var lop = 'sdp-bo sdp-' + (b.vt.xoay === 'doc' ? 'doc' : 'ngang') + (b.keThem ? ' sdp-ke-them' : '') + (cuaToi ? ' sdp-cua-toi' : (opts.toi ? ' sdp-mo' : '')) + (chon === b.k ? ' sdp-chon' : '');
+          var cham = opts.toi ? '' : '<span class="sdp-cham">' + b.g.map(function (g) { return '<i class="' + (g.co ? 'co' : '') + (g.hong ? ' hong' : '') + '" title="' + g.ma + '"></i>'; }).join('') + '</span>';
+          return '<div class="' + lop + '" data-k="' + b.k + '" style="' + viTri(sd, b.vt) + '"' + (opts.bam ? ' role="button" tabindex="0"' : '') + '><div class="sdp-bo-trong">' +
+            '<span class="sdp-so">' + soNgan(b.k) + '</span>' + cham + '</div></div>';
+        }).join('');
+        var khay = sdCk.bo.filter(function (b) { return !b.vt; });
+        var ct = '';
+        if (opts.bam) {
+          var b = boCua(chon);
+          ct = b ? '<div class="sdp-ct"><b>' + tenBo(b.k) + (b.keThem ? ' · kê thêm' : '') + '</b>' + b.g.map(function (g) {
+            return '<div class="sdp-ct-dong"><span>' + g.ma + ' · ' + g.vi + '</span><span>' + (g.ten ? thoat(g.ten) : g.hong ? '<i>Hỏng</i>' : g.co ? 'Có người' : '<i>Trống</i>') + '</span></div>';
+          }).join('') + '</div>' : '<div class="sdp-goi-y">Bấm 1 bộ giường để xem ai nằm ở đó.</div>';
+        }
+        el.innerHTML = khung(sd, bo, { toiDa: opts.toiDa || 34 }) +
+          (opts.toi ? '<div class="sdp-chu-giai"><span><i class="sdp-cg-toi"></i>Giường của bạn</span><span><i></i>Giường khác</span><span><i class="sdp-cg-cua"></i>Cửa</span></div>' : '') +
+          (khay.length ? '<div class="sdp-goi-y">Chưa có vị trí trên sơ đồ: ' + khay.map(function (x) { return tenBo(x.k) + (opts.toi && x.g.some(function (g) { return g.ma === opts.toi; }) ? ' (giường của bạn)' : ''); }).join(', ') + '</div>' : '') + ct;
+      }
+      if (opts.bam) el.onclick = function (ev) {
+        var n = ev.target.closest && ev.target.closest('.sdp-bo[data-k]');
+        if (!n || !el.contains(n)) return;
+        chon = chon === n.getAttribute('data-k') ? '' : n.getAttribute('data-k'); ve();
+      };
+      ve();
+    }
+    return { kho: kho, tenBo: tenBo, soNgan: soNgan, oChuan: oChuan, xepChuan: xepChuan, kiemTra: kiemTra, viTri: viTri, khung: khung, veCongKhai: veCongKhai, thoat: thoat, icon: ICON };
+  })();
+</script>
+<!-- /KTXSoDo -->
 <script>
 (function () {
   'use strict';
@@ -138,7 +270,7 @@
   if (thamSo.api && API === thamSo.api) luu('ktxApi', API);
   var TIEN_TO = 'ktx_' + K.slice(0, 8) + '_';
   var S = { ten: '', dots: [], maDot: thamSo.dot || '', dot: null, dsPhong: [], maPhong: '', phong: null, man: '', hangCho: [], dangGui: false, ketQuaGui: null, dangGuiMa: {},
-    che: doc('ktx_' + K.slice(0, 8) + '_che') === 'dem' ? 'dem' : 'kt', cauTruc: [], maKhuDem: '', maDay: '', maPhongDem: '', nhap: null, giuongXem: '' }; // D76
+    che: doc('ktx_' + K.slice(0, 8) + '_che') === 'dem' ? 'dem' : 'kt', cauTruc: [], maKhuDem: '', maDay: '', maPhongDem: '', nhap: null, giuongXem: '', suaSd: null }; // D76 · D77: suaSd = đang sửa sơ đồ { chon }
   try { S.hangCho = JSON.parse(doc(TIEN_TO + 'hangCho') || '[]'); } catch (e) { S.hangCho = []; }
   var phongMoDau = thamSo.phong || '';
   var $ = function (id) { return document.getElementById(id); };
@@ -238,6 +370,11 @@
       var daGui = {}; lo.forEach(function (l) { daGui[l.id] = true; });
       S.hangCho = S.hangCho.filter(function (l) { return !daGui[l.id]; }); luuHangCho();
       var kq = r.kq || [];
+      kq.forEach(function (x, i) { // D77: bản kiểm đếm vừa nộp từ hàng chờ → nhớ mã bản (biết khi BQL duyệt / bỏ)
+        var l = lo.filter(function (y) { return y.id === x.id; })[0] || lo[i];
+        if (!l || l.loai !== 'nopBanKiemDem' || !x.ok || !x.maBan) return;
+        var n = docNhap(l.maPhong); if (n && n.nop && n.nop.cho) { n.nop = { luc: l.luc, maBan: x.maBan }; luuNhap(l.maPhong, n); }
+      });
       var ghi = kq.filter(function (x) { return x.ok && (x.ket === 'daGhi'); }).length;
       S.ketQuaGui = { luc: new Date().toISOString(), ghi: ghi, khac: kq.filter(function (x) { return !(x.ok && x.ket === 'daGhi'); }) };
       bip(S.ketQuaGui.khac.length ? 'canh' : 'ok');
@@ -560,19 +697,66 @@
     document.querySelectorAll('[data-viec="ghiTay"]').forEach(function (b) { b.disabled = !n; });
   }
 
-  // ================================================================== D76: ĐẾM SĨ SỐ — hỏi tên + xếp vào giường (làm được khi mất sóng)
-  // Dữ liệu 1 Dãy tải trước: TIEN_TO + 'dem_' + maDay = { luuLuc, ...siSo }. Lượt xepTenTam / xoaTenTam áp ngay lên bản trong máy (thấy liền),
-  // gửi khi có sóng; máy chủ kiểm tra lại (giường vừa có người khác → vào hàng chờ + báo). Phòng "đã đếm" đánh dấu trong máy theo ngày.
+  // ================================================================== D77: ĐẾM SĨ SỐ = BẢN KIỂM ĐẾM (sửa trong máy, nộp cho BQL duyệt — app không đổi tới lúc duyệt)
+  // Dữ liệu 1 Dãy tải trước: TIEN_TO + 'dem_' + maDay = { luuLuc, ...siSo } (mỗi phòng: giường, người, sơ đồ, chữ ký ky, bản mới nhất ban).
+  // Bản nháp 1 phòng: TIEN_TO + 'nhap_' + maPhong = { maDay, ky, taiLuc, bo, so, g: { 'A1': { cn, hong, xn, giu } }, cho, nop, doi }.
+  //   Người: có trên app { ma, ten, gt, cg } · mới { moi: true, ma: 'moi-…', ten, gt, lyDoNu }. nop = { luc, maBan } | { luc, cho: true } (chờ sóng).
+  // Mọi thao tác chỉ đổi bản nháp (làm được khi mất sóng). "Nộp bản kiểm đếm" gửi cả bản 1 lần qua hàng chờ (lượt nopBanKiemDem).
+  // BQL duyệt / bỏ bản → lần tải Dãy sau thấy p.ban.tt khác 'Cho' → bản nháp tự xoá.
   function docDem(maDay) { try { return JSON.parse(doc(TIEN_TO + 'dem_' + maDay) || 'null'); } catch (e) { return null; } }
   function luuDem(maDay, d) { luu(TIEN_TO + 'dem_' + maDay, JSON.stringify(d)); }
   function dayHayDung() { try { return JSON.parse(doc(TIEN_TO + 'dayDem') || '[]'); } catch (e) { return []; } }
   function nhoDay(maDay) { var ds = dayHayDung().filter(function (x) { return x !== maDay; }); ds.unshift(maDay); luu(TIEN_TO + 'dayDem', JSON.stringify(ds.slice(0, 4))); }
-  function coChoDay(maDay) { return S.hangCho.some(function (l) { return l.maDay === maDay && (l.loai === 'xepTenTam' || l.loai === 'xoaTenTam'); }); }
-  function homNayMay() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-  function daDem() { try { var x = JSON.parse(doc(TIEN_TO + 'daDem') || '{}'); return x.ngay === homNayMay() ? x : { ngay: homNayMay(), p: {} }; } catch (e) { return { ngay: homNayMay(), p: {} }; } }
+  function coChoDay(maDay) { return S.hangCho.some(function (l) { return l.maDay === maDay && l.loai === 'nopBanKiemDem'; }); }
+  function docNhap(mp) { try { return JSON.parse(doc(TIEN_TO + 'nhap_' + mp) || 'null'); } catch (e) { return null; } }
+  function luuNhap(mp, n) { luu(TIEN_TO + 'nhap_' + mp, n ? JSON.stringify(n) : null); }
+  function nguoiTuApp(c) { return c ? { ma: c.ma, ten: c.ten, gt: c.gt, cg: !!c.cg } : null; }
+  function taoNhap(p) {
+    var x = docDem(S.maDay) || {};
+    var n = { maDay: S.maDay, ky: p.ky || '', taiLuc: x.luuLuc || '', bo: (p.bo || []).map(function (b) { return { loai: b.loai, so: b.so, keThem: !!b.keThem }; }),
+      so: JSON.parse(JSON.stringify(p.soDo || { cot: 10, hang: 6, vt: {} })), g: {}, cho: (p.cho || []).map(nguoiTuApp), nop: null, doi: false };
+    (p.bo || []).forEach(function (b) { b.giuong.forEach(function (g) { if (g.cn || g.hong || g.giu) n.g[g.ma] = { cn: nguoiTuApp(g.cn), hong: !!g.hong, giu: !!g.giu && !g.cn }; }); });
+    return n;
+  }
+  function phongDem() { var x = docDem(S.maDay); return x ? x.phong.filter(function (p) { return p.MaPhong === S.maPhongDem; })[0] : null; }
+  function banXem(p) { return docNhap(p.MaPhong) || taoNhap(p); }
+  function khoaBo(b) { return b.loai + ':' + b.so; }
+  function maCuaBo(b) { return b.loai === 'Tang' ? ['A' + b.so, 'B' + b.so] : ['C' + b.so]; }
+  function tenBo(b) { return b.loai === 'Tang' ? 'Bộ ' + b.so : 'Bộ đơn C' + b.so; }
+  function boXep(n) { return n.bo.slice().sort(function (a, b) { return a.loai === b.loai ? a.so - b.so : (a.loai === 'Tang' ? -1 : 1); }); }
+  function viCua(m) { return m.charAt(0) === 'B' ? 'Trên' : 'Dưới'; }
+  function moiNguoi(n) {
+    var ds = [];
+    Object.keys(n.g).forEach(function (m) { if (n.g[m].cn) ds.push(n.g[m].cn); });
+    return ds.concat(n.cho);
+  }
+  function demNhap(n) {
+    var ds = moiNguoi(n);
+    return { tong: ds.length, cg: ds.filter(function (x) { return x.cg || x.moi; }).length, nam: ds.filter(function (x) { return x.gt === 'Nam'; }).length, nu: ds.filter(function (x) { return x.gt === 'Nữ'; }).length };
+  }
+  function giuongCuaNguoi(n, ma) { return Object.keys(n.g).filter(function (m) { return n.g[m].cn && n.g[m].cn.ma === ma; })[0] || ''; }
+  function timNguoiNhap(n, ma) { var m = giuongCuaNguoi(n, ma); return m ? n.g[m].cn : n.cho.filter(function (c) { return c.ma === ma; })[0] || null; }
+  function boNguoiKhoiCho(n, ma) { n.cho = n.cho.filter(function (c) { return c.ma !== ma; }); }
+  function veHangCho2(n, m) { var o = n.g[m]; if (o && o.cn) { n.cho.push(o.cn); o.cn = null; o.xn = false; } }
+  function donGiuong(n, m) { var o = n.g[m]; if (o && !o.cn && !o.hong && !o.giu) delete n.g[m]; }
+  /** Đổi bản nháp của phòng đang mở: fn(n, p). Đã nộp rồi sửa → đánh dấu "có thay đổi sau lúc nộp". */
+  function suaNhap(fn) {
+    var p = phongDem(); if (!p) return;
+    var n = banXem(p);
+    fn(n, p);
+    n.doi = true;
+    luuNhap(p.MaPhong, n);
+  }
   function taiDem(maDay, im) {
     return goi({ viec: 'siSo', maDay: maDay }).then(function (r) {
       r.luuLuc = new Date().toISOString(); luuDem(maDay, r); nhoDay(maDay);
+      r.phong.forEach(function (p) { // BQL đã duyệt / bỏ bản mình nộp → xoá bản nháp
+        var n = docNhap(p.MaPhong);
+        if (n && n.nop && n.nop.maBan && p.ban && p.ban.maBan === n.nop.maBan && p.ban.tt !== 'Cho') {
+          luuNhap(p.MaPhong, null);
+          if (!im || S.maPhongDem === p.MaPhong) toast(p.TenPhong + ': BQL đã ' + (p.ban.tt === 'DaDuyet' ? 'duyệt' : 'bỏ') + ' bản kiểm đếm');
+        }
+      });
       if (!im) toast('✓ Đã tải ' + r.phong.length + ' phòng ' + r.TenDay + ' — dùng được khi mất sóng');
       return r;
     });
@@ -581,12 +765,7 @@
     return '<div class="viec2" role="tablist"><button type="button" data-viec="che" data-che="kt" role="tab" aria-selected="' + (S.che !== 'dem') + '"' + (S.che !== 'dem' ? ' class="on"' : '') + '>🛡 Điểm danh tại giường</button>' +
       '<button type="button" data-viec="che" data-che="dem" role="tab" aria-selected="' + (S.che === 'dem') + '"' + (S.che === 'dem' ? ' class="on"' : '') + '>🔢 Đếm sĩ số phòng</button></div>';
   }
-  function demPhong(p) {
-    var ds = [];
-    (p.bo || []).forEach(function (b) { b.giuong.forEach(function (g) { if (g.cn) ds.push(g.cn); }); });
-    (p.cho || []).forEach(function (c) { if (c) ds.push(c); });
-    return { tong: ds.length, cg: ds.filter(function (x) { return x.cg; }).length, nam: ds.filter(function (x) { return x.gt === 'Nam'; }).length, nu: ds.filter(function (x) { return x.gt === 'Nữ'; }).length };
-  }
+  function trangThaiNhap(mp) { var n = docNhap(mp); return !n ? '' : n.nop && !n.doi ? 'nop' : n.doi ? 'nhap' : ''; }
   function veDemDs(dangTai, loi) {
     var h = veChonViec() + veHangCho();
     if (loi && !S.cauTruc.length) h += '<div class="bao loi">' + thoat(laLoiMang(loi) ? 'Chưa kết nối được web app — có sóng sẽ tự tải.' : loi.message) + '</div>';
@@ -600,20 +779,21 @@
     var khu = dsKhu.filter(function (k) { return k.MaKhu === S.maKhuDem; })[0];
     if (khu) h += khu.day.map(function (d) {
       var x = docDem(d.MaDay), cu = x && Date.now() - new Date(x.luuLuc).getTime() > 86400000;
-      var dem = x ? x.phong.filter(function (p) { return daDem().p[p.MaPhong]; }).length : 0;
+      var nop = x ? x.phong.filter(function (p) { return trangThaiNhap(p.MaPhong) === 'nop'; }).length : 0;
+      var nhap = x ? x.phong.filter(function (p) { return trangThaiNhap(p.MaPhong) === 'nhap'; }).length : 0;
       return '<div class="the"><div class="h"><b>' + thoat(d.TenDay) + '</b><span class="phu">' + d.soPhong + ' phòng</span></div>' +
         (x ? '<div class="phu' + (cu ? ' cu' : '') + '">' + (cu ? 'Dữ liệu tải lúc ' + gio(x.luuLuc) + ' ' + ngayNgan(x.luuLuc) + ' — nên tải lại khi có sóng' : '✓ Đã tải lúc ' + gio(x.luuLuc) + ' — dùng được khi mất sóng') +
-          (dem ? ' · hôm nay đã đếm ' + dem + ' phòng' : '') + '</div>' : '<div class="phu">Chưa tải — tải khi còn sóng (ở văn phòng) để xuống phòng không cần mạng.</div>') +
+          (nop ? ' · đã nộp ' + nop + ' phòng' : '') + (nhap ? ' · ' + nhap + ' bản nháp chưa nộp' : '') + '</div>' : '<div class="phu">Chưa tải — tải khi còn sóng (ở văn phòng) để xuống phòng không cần mạng.</div>') +
         '<div class="hang-nut"><button class="nut xanh" data-viec="vaoDayDem" data-day="' + thoat(d.MaDay) + '"' + (x || coMang ? '' : ' disabled') + '>Vào đếm</button>' +
         '<button class="nut vien" data-viec="taiDem" data-day="' + thoat(d.MaDay) + '">⬇ ' + (x ? 'Tải lại' : 'Tải') + '</button></div></div>';
     }).join('');
     else if (!dangTai && !loi) h += '<div class="rong">Chưa có Dãy nào.</div>';
     $('than').innerHTML = h;
   }
-  function lamMoiDemNgam() { // D77: vào Dãy / phòng khi có sóng → hỏi lại máy chủ (trước chỉ dùng bản đã tải → app đếm / xếp giường xong trang quét không thấy)
-    if (!coMang || coChoDay(S.maDay)) return;
+  function lamMoiDemNgam() { // vào Dãy / phòng khi có sóng → hỏi lại máy chủ (bản nháp giữ riêng, không bị ghi đè)
+    if (!coMang) return;
     var maDay = S.maDay;
-    taiDem(maDay, true).then(function () { if (S.maDay === maDay && !$('lop').innerHTML) veLai(); }, function () { /* mất sóng — giữ bản trong máy */ });
+    taiDem(maDay, true).then(function () { if (S.maDay === maDay && !$('lop').innerHTML && !S.suaSd) veLai(); }, function () { /* mất sóng — giữ bản trong máy */ });
   }
   function vaoDayDem() {
     var x = docDem(S.maDay);
@@ -626,45 +806,135 @@
   function veDayDem() {
     var x = docDem(S.maDay); if (!x) return;
     $('tieuDe').textContent = 'Đếm · ' + x.TenDay;
-    var xong = daDem().p;
-    var h = veHangCho() + '<div class="phu" style="margin-bottom:8px">Khu ' + thoat(x.TenKhu) + ' · bấm phòng → hỏi tên người nằm ở giường trống, xếp luôn vào giường.</div><div class="luoi">' +
+    var h = veHangCho() + '<div class="phu" style="margin-bottom:8px">Khu ' + thoat(x.TenKhu) + ' · bấm phòng → bấm từng giường để ghi ai đang nằm, xong bấm "Nộp bản kiểm đếm". App chỉ cập nhật khi BQL duyệt.</div><div class="luoi">' +
       x.phong.map(function (p) {
-        var d = demPhong(p);
-        return '<button class="op' + (xong[p.MaPhong] ? ' xong' : '') + '" data-viec="vaoPhongDem" data-phong="' + thoat(p.MaPhong) + '">' + thoat(p.TenPhong) +
-          '<small>' + d.tong + '/' + p.SucChua + (d.cg ? ' · ' + d.cg + ' chưa HS' : '') + '</small></button>';
-      }).join('') + '</div><div class="phu" style="margin-top:8px">Xanh lá = hôm nay đã đếm xong · số = người / sức chứa · "chưa HS" = chưa có hồ sơ.</div>';
+        var tt = trangThaiNhap(p.MaPhong), d = demNhap(banXem(p));
+        return '<button class="op' + (tt === 'nop' ? ' xong' : tt === 'nhap' ? ' dang' : '') + '" data-viec="vaoPhongDem" data-phong="' + thoat(p.MaPhong) + '">' + thoat(p.TenPhong) +
+          '<small>' + d.tong + '/' + p.SucChua + (tt === 'nop' ? ' · đã nộp' : tt === 'nhap' ? ' · nháp' : d.cg ? ' · ' + d.cg + ' chưa HS' : '') + '</small></button>';
+      }).join('') + '</div><div class="phu" style="margin-top:8px">Xanh lá = đã nộp, chờ BQL duyệt · xanh dương = bản nháp chưa nộp · số = người / sức chứa.</div>';
     $('than').innerHTML = h;
   }
-  function phongDem() { var x = docDem(S.maDay); return x ? x.phong.filter(function (p) { return p.MaPhong === S.maPhongDem; })[0] : null; }
-  function vaoPhongDem() { vePhongDem(); lamMoiDemNgam(); }
-  function oGiuong(g) {
-    var cn = g.cn, lop = 'gi' + (g.hong ? ' hong' : !cn ? ' trong' : cn.cg ? ' cg' : '') + (cn && cn.cho ? ' cho' : '');
-    var chu = g.hong ? 'Giường hỏng' : g.giu && !cn ? 'Giữ cho cặp vợ chồng' : !cn ? '+ Nhập tên' : thoat(cn.ten) + (cn.cg ? '<span class="tag-cg">chưa HS</span>' : '');
-    return '<button class="' + lop + '" data-viec="giuong" data-g="' + thoat(g.ma) + '"' + (g.hong || (g.giu && !cn) ? ' disabled' : '') + '><small><i class="cham ' + (cn && cn.gt === 'Nữ' ? 'nu' : 'nam') + '"' + (cn ? '' : ' style="visibility:hidden"') + '></i>' +
-      thoat(g.ma) + ' · ' + thoat(g.vi) + (cn && cn.cho ? ' · ⏳' : '') + '</small><b>' + chu + '</b></button>';
+  function vaoPhongDem() { S.suaSd = null; vePhongDem(); lamMoiDemNgam(); }
+
+  // ---- vẽ 1 phòng
+  function oGiuong(n, m, nho) {
+    var o = n.g[m] || {}, cn = o.cn;
+    var lop = 'gi' + (nho ? ' gi-m' : '') + (o.hong ? ' hong' : !cn ? ' trong' : (cn.cg || cn.moi) ? ' cg' : '') + (o.xn ? ' xn' : '');
+    var chu = o.hong ? 'Hỏng' : o.giu && !cn ? 'Giữ cho cặp' : !cn ? (nho ? '+' : '+ Nhập tên') : thoat(nho ? String(cn.ten || '').trim().split(/\s+/).pop() : cn.ten) + (!nho && (cn.cg || cn.moi) ? '<span class="tag-cg">chưa HS</span>' : '');
+    return '<button class="' + lop + '" data-viec="giuong" data-g="' + m + '" title="' + thoat(m + (cn ? ' — ' + cn.ten : '')) + '"><small>' + (nho ? '' : '<i class="cham ' + (cn && cn.gt === 'Nữ' ? 'nu' : 'nam') + '"' + (cn ? '' : ' style="visibility:hidden"') + '></i>') +
+      m + (nho ? '' : ' · ' + viCua(m)) + (o.xn ? ' ✓' : '') + '</small><b>' + chu + '</b></button>';
+  }
+  function veBoThe(n, b) { return '<div class="bo"><div class="bo-ten">' + tenBo(b) + (b.keThem ? ' · kê thêm' : '') + '</div><div class="bo-g">' + maCuaBo(b).map(function (m) { return oGiuong(n, m); }).join('') + '</div></div>'; }
+  function veSoDoDem(n) {
+    var SD = window.KTXSoDo, sd = n.so, tren = '', khay = [];
+    boXep(n).forEach(function (b) {
+      var vt = sd.vt[khoaBo(b)];
+      if (!vt) { khay.push(b); return; }
+      tren += '<div class="sdp-bo sdp-' + (vt.xoay === 'doc' ? 'doc' : 'ngang') + (b.keThem ? ' sdp-ke-them' : '') + '" style="' + SD.viTri(sd, vt) + '"><div class="sdp-bo-trong">' + maCuaBo(b).map(function (m) { return oGiuong(n, m, true); }).join('') + '</div></div>';
+    });
+    return SD.khung(sd, tren, { toiDa: 52, tyLe: 1.6 }) + (khay.length ? '<div class="phu" style="margin:10px 2px 4px">Chưa đặt lên sơ đồ</div>' + khay.map(function (b) { return veBoThe(n, b); }).join('') : '');
   }
   function vePhongDem() {
     var p = phongDem();
     if (!p) { $('than').innerHTML = '<div class="bao loi">Không có dữ liệu phòng này — quay lại tải Dãy.</div>'; return; }
-    var x = docDem(S.maDay), d = demPhong(p);
+    var x = docDem(S.maDay), n = banXem(p), d = demNhap(n);
     $('tieuDe').textContent = p.TenPhong + ' · ' + x.TenDay;
+    if (S.suaSd) { veSuaSd(n); return; }
     var h = veHangCho() + '<div class="tong-si"><b>' + d.tong + '</b> / ' + p.SucChua + ' người <span class="phu">· Nam ' + d.nam + ' · Nữ ' + d.nu + (d.cg ? ' · ' + d.cg + ' chưa có hồ sơ' : '') + '</span>' +
       (p.PhongNu ? ' <span class="nhan n-qua">Phòng nữ</span>' : '') + (d.tong > p.SucChua ? '<div class="phu cu">Vượt sức chứa — vẫn ghi được.</div>' : '') + '</div>';
-    if (p.coBoTri) h += p.bo.map(function (b) { return '<div class="bo"><div class="bo-ten">' + (b.loai === 'Tang' ? 'Bộ ' + b.so : 'Bộ đơn C' + b.so) + '</div><div class="bo-g">' + b.giuong.map(oGiuong).join('') + '</div></div>'; }).join('');
-    else h += '<div class="bao canh">Phòng chưa khai báo giường trong app — chỉ nhập tên vào danh sách người của phòng.</div>';
-    var cho = p.cho || [];
-    h += '<div class="h" style="margin:10px 2px 4px"><b>' + (p.coBoTri ? 'Chưa có giường' : 'Người trong phòng') + ' (' + cho.length + ')</b></div><div class="the" style="padding:4px 10px">' +
+    if (n.nop) h += '<div class="bao ' + (n.doi ? 'canh' : 'ok') + '">' + (n.nop.cho ? '⏳ Đã lưu bản — có sóng tự nộp' : '✓ Đã nộp lúc ' + gio(n.nop.luc) + ' — chờ BQL duyệt') +
+      (n.doi ? '<small>Có thay đổi sau lúc nộp — bấm "Nộp lại" để BQL thấy bản mới.</small>' : '<small>App chưa đổi cho tới khi BQL so sánh và duyệt.</small>') + '</div>';
+    else if (n.doi) h += '<div class="bao canh">✎ Bản nháp — chưa nộp<small>Ghi xong cả phòng thì bấm "Nộp bản kiểm đếm".</small></div>';
+    if (p.ban && p.ban.tt === 'Cho' && !(n.nop && n.nop.maBan === p.ban.maBan)) h += '<div class="bao canh">' + thoat(p.ban.nguoi || 'BQL khác') + ' đã nộp 1 bản cho phòng này<small>Nộp bản của bạn sẽ thay bản đó.</small></div>';
+    if (n.bo.length) {
+      var xem = doc(TIEN_TO + 'xemDem') === 'ds' ? 'ds' : 'sd';
+      h += '<div class="seg seg2" role="group" aria-label="Kiểu xem"><button data-viec="xemDem" data-xem="sd" aria-pressed="' + (xem === 'sd') + '"' + (xem === 'sd' ? ' class="on"' : '') + '>Sơ đồ phòng</button>' +
+        '<button data-viec="xemDem" data-xem="ds" aria-pressed="' + (xem === 'ds') + '"' + (xem === 'ds' ? ' class="on"' : '') + '>Danh sách bộ</button></div>';
+      h += xem === 'sd' && window.KTXSoDo ? veSoDoDem(n) : boXep(n).map(function (b) { return veBoThe(n, b); }).join('');
+      h += '<div class="phu" style="margin-top:6px">Viền xanh ✓ = đã xác nhận đúng người · vàng = chưa có hồ sơ.</div>';
+    } else h += '<div class="bao canh">Phòng chưa khai báo giường<small>Bấm "Sơ đồ" để thêm bộ giường theo thực tế, hoặc chỉ nhập người.</small></div>';
+    var cho = n.cho;
+    h += '<div class="h" style="margin:12px 2px 4px"><b>' + (n.bo.length ? 'Chưa có giường' : 'Người trong phòng') + ' (' + cho.length + ')</b></div><div class="the" style="padding:4px 10px">' +
       (cho.length ? cho.map(function (c) {
-        return '<button class="ng" data-viec="nguoiCho" data-ma="' + thoat(c.ma) + '"><span><b><i class="cham ' + (c.gt === 'Nữ' ? 'nu' : 'nam') + '"></i>' + thoat(c.ten) + '</b>' + (c.cg ? '<span class="tag-cg">chưa HS</span>' : '') + (c.cho ? ' <span class="phu">⏳ chờ gửi</span>' : '') + '</span></button>';
+        return '<button class="ng" data-viec="nguoiCho" data-ma="' + thoat(c.ma) + '"><span><b><i class="cham ' + (c.gt === 'Nữ' ? 'nu' : 'nam') + '"></i>' + thoat(c.ten) + '</b>' + (c.cg || c.moi ? '<span class="tag-cg">chưa HS</span>' : '') + (c.moi ? ' <span class="phu">mới</span>' : '') + '</span></button>';
       }).join('') : '<div class="rong" style="padding:10px">Không có.</div>') + '</div>';
+    if (n.doi || n.nop) h += '<button class="nut vien" style="margin-top:12px" data-viec="boNhap">↺ Bỏ bản nháp, lấy lại bản app</button>';
     $('than').innerHTML = h;
-    $('dayDuoiTrong').innerHTML = '<button class="nut vien" data-viec="themNgoai">+ Người chưa có giường</button><button class="nut xanh" data-viec="xongDem">✓ Xong phòng</button>';
+    $('dayDuoiTrong').innerHTML = '<button class="nut vien" data-viec="themNgoai">+ Người</button><button class="nut vien" data-viec="suaSd">✎ Sơ đồ</button>' +
+      '<button class="nut xanh" data-viec="nopBan">' + (n.nop && !n.doi ? '✓ Đã nộp' : n.nop ? 'Nộp lại' : 'Nộp bản kiểm đếm') + '</button>';
   }
-  /** Tấm nhập tên tạm: d = { giuong, nguoiKhac, tieuDe }. Nhớ giới tính lần trước. Phòng nữ + Nam → bắt buộc lý do (hỏi ngay, không cần mạng). */
+
+  // ---- sửa sơ đồ (thêm / xoá bộ, đặt / xoay, cột × hàng) — cùng luật với app (KTXSoDo + GiuongService)
+  function veSuaSd(n) {
+    var SD = window.KTXSoDo, sd = n.so, chon = S.suaSd.chon, b0 = chon ? n.bo.filter(function (b) { return khoaBo(b) === chon; })[0] : null, coVt = b0 && sd.vt[chon];
+    var o = function (dk) { return dk ? '' : ' disabled'; };
+    var tren = boXep(n).filter(function (b) { return sd.vt[khoaBo(b)]; }).map(function (b) {
+      var k = khoaBo(b), vt = sd.vt[k];
+      return '<div class="sdp-bo sdp-' + (vt.xoay === 'doc' ? 'doc' : 'ngang') + (b.keThem ? ' sdp-ke-them' : '') + (k === chon ? ' sdp-chon' : '') + '" data-viec="sdBo" data-k="' + k + '" style="' + SD.viTri(sd, vt) + '"><div class="sdp-bo-trong"><span class="sdp-so">' + SD.soNgan(k) + '</span></div></div>';
+    }).join('');
+    var khay = boXep(n).filter(function (b) { return !sd.vt[khoaBo(b)]; });
+    var h = '<div class="bao canh" style="font-weight:600">Sửa sơ đồ theo thực tế<small>Bấm 1 bộ → bấm ô trống để dời tới. BQL sẽ so sánh với sơ đồ trên app trước khi cập nhật.</small></div>' +
+      '<div class="sd-cong-cu"><button class="nut vien" data-viec="sdThem" data-loai="Tang">+ Bộ tầng</button><button class="nut vien" data-viec="sdThem" data-loai="Don">+ Bộ đơn</button></div>' +
+      '<div class="sd-cong-cu"><span class="sd-dem">Cột <button data-viec="sdKich" data-c="cot" data-d="-1" aria-label="Bớt cột">−</button><b>' + sd.cot + '</b><button data-viec="sdKich" data-c="cot" data-d="1" aria-label="Thêm cột">+</button></span>' +
+      '<span class="sd-dem">Hàng <button data-viec="sdKich" data-c="hang" data-d="-1" aria-label="Bớt hàng">−</button><b>' + sd.hang + '</b><button data-viec="sdKich" data-c="hang" data-d="1" aria-label="Thêm hàng">+</button></span></div>' +
+      '<div class="sd-thanh' + (chon ? ' co' : '') + '"><div class="sd-thanh-chu">' + (b0 ? '<b>' + tenBo(b0) + '</b> — bấm ô trống để dời tới (ô đó là góc trên-trái)' : 'Chưa chọn bộ nào — bấm 1 bộ trên sơ đồ hoặc ở khay.') + '</div>' +
+      '<div class="sd-thanh-nut"><button data-viec="sdXoay"' + o(coVt) + '>⟳ Xoay</button><button data-viec="sdKhay"' + o(coVt) + '>↩ Về khay</button><button data-viec="sdXoa"' + o(b0) + '>🗑 Xoá bộ</button></div></div>' +
+      SD.khung(sd, tren, { o: true, toiDa: 44, tyLe: 1.3 }) +
+      '<div class="sd-khay"><div class="phu">Chưa đặt lên sơ đồ (' + khay.length + ')</div><div class="sd-khay-ds">' + (khay.length ? khay.map(function (b) {
+        var k = khoaBo(b); return '<button class="chip' + (k === chon ? ' on' : '') + '" data-viec="sdBo" data-k="' + k + '">' + tenBo(b) + '</button>';
+      }).join('') : '<span class="phu">Trống.</span>') + '</div></div>';
+    $('than').innerHTML = h;
+    $('dayDuoiTrong').innerHTML = '<button class="nut xanh" data-viec="sdXong">✓ Xong sửa sơ đồ</button>';
+  }
+  function choTrongDau(n, b) { // vị trí chuẩn đầu tiên còn trống cho bộ mới
+    var SD = window.KTXSoDo, sd = n.so, ds = SD.oChuan(sd.cot, sd.hang).concat([]);
+    for (var y = 0; y < sd.hang; y++) for (var x = 0; x < sd.cot; x++) { ds.push({ x: x, y: y, xoay: 'ngang' }); ds.push({ x: x, y: y, xoay: 'doc' }); }
+    return ds.filter(function (v) { return !SD.kiemTra(sd, khoaBo(b), v); })[0] || null;
+  }
+  function suaSd(viec, b) {
+    var SD = window.KTXSoDo, loi = '';
+    suaNhap(function (n, p) {
+      var sd = n.so, chon = S.suaSd.chon, b0 = n.bo.filter(function (x) { return khoaBo(x) === chon; })[0];
+      if (viec === 'sdThem') {
+        var loai = b.getAttribute('data-loai'), so = n.bo.filter(function (x) { return x.loai === loai; }).reduce(function (m, x) { return Math.max(m, x.so); }, 0) + 1;
+        var moi = { loai: loai, so: so, keThem: !!p.coBoTri };
+        n.bo.push(moi);
+        var v = choTrongDau(n, moi); if (v) sd.vt[khoaBo(moi)] = v;
+        S.suaSd.chon = khoaBo(moi);
+      } else if (viec === 'sdKich') {
+        var c = b.getAttribute('data-c'), d = Number(b.getAttribute('data-d')), gh = c === 'cot' ? [4, 20] : [4, 14], moiSo = sd[c] + d;
+        if (moiSo < gh[0] || moiSo > gh[1]) { loi = (c === 'cot' ? 'Số cột' : 'Số hàng') + ' từ ' + gh[0] + ' đến ' + gh[1] + '.'; return; }
+        var thu = { cot: c === 'cot' ? moiSo : sd.cot, hang: c === 'hang' ? moiSo : sd.hang, vt: {} };
+        var ra = Object.keys(sd.vt).filter(function (k) { var q = SD.kho(sd.vt[k].xoay); return sd.vt[k].x + q.w > thu.cot || sd.vt[k].y + q.h > thu.hang; });
+        if (ra.length) { loi = SD.tenBo(ra[0]) + ' sẽ ra ngoài phòng — dời bộ đó vào trong trước.'; return; }
+        sd[c] = moiSo;
+      } else if (viec === 'sdXoay' && b0 && sd.vt[chon]) {
+        var vx = { x: sd.vt[chon].x, y: sd.vt[chon].y, xoay: sd.vt[chon].xoay === 'doc' ? 'ngang' : 'doc' };
+        loi = SD.kiemTra(sd, chon, vx); if (!loi) sd.vt[chon] = vx;
+      } else if (viec === 'sdKhay' && b0) delete sd.vt[chon];
+      else if (viec === 'sdXoa' && b0) {
+        maCuaBo(b0).forEach(function (m) { veHangCho2(n, m); delete n.g[m]; });
+        n.bo.splice(n.bo.indexOf(b0), 1); delete sd.vt[chon]; S.suaSd.chon = '';
+      } else if (viec === 'sdO' && b0) {
+        var cu = sd.vt[chon], vo = { x: Number(b.getAttribute('data-x')), y: Number(b.getAttribute('data-y')), xoay: cu ? cu.xoay : 'ngang' };
+        loi = SD.kiemTra(sd, chon, vo);
+        if (loi && !cu) { var vd = { x: vo.x, y: vo.y, xoay: 'doc' }; if (!SD.kiemTra(sd, chon, vd)) { vo = vd; loi = ''; } }
+        if (!loi) sd.vt[chon] = vo;
+      }
+    });
+    if (loi) { bip('canh'); toast('⚠ ' + loi); }
+    vePhongDem();
+  }
+
+  // ---- tấm nhập tên / chọn người
+  /** d = { giuong, thay (người đang nằm về "Chưa có giường"), tieuDe }. Nhớ giới tính lần trước. Phòng nữ + Nam → bắt buộc lý do (hỏi ngay, không cần mạng). */
   function moNhapTen(d) {
-    var p = phongDem(), gt = doc(TIEN_TO + 'gtNho') === 'Nữ' ? 'Nữ' : 'Nam';
+    var p = phongDem(), n = banXem(p), gt = doc(TIEN_TO + 'gtNho') === 'Nữ' ? 'Nữ' : 'Nam';
     S.nhap = d;
-    moLop('<h3>' + thoat(d.tieuDe) + '</h3><div class="phu">Hỏi nhanh tên gọi (vd "Bình"). Về văn phòng nhập Excel / đối chiếu để thành hồ sơ thật.</div>',
+    var chonCo = d.giuong ? n.cho : [];
+    moLop('<h3>' + thoat(d.tieuDe) + '</h3><div class="phu">Hỏi nhanh tên gọi (vd "Bình"). BQL đối chiếu với hồ sơ / Excel khi duyệt.</div>',
+      (chonCo.length ? '<div class="phu" style="margin-top:6px">Người trong phòng chưa có giường — bấm để xếp vào:</div><div class="chips" style="flex-wrap:wrap">' + chonCo.map(function (c) {
+        return '<button class="chip" data-viec="xepCho" data-ma="' + thoat(c.ma) + '">' + thoat(c.ten) + '</button>'; }).join('') + '</div><div class="phu">Hoặc người mới:</div>' : '') +
       '<input type="text" class="tenTam" maxlength="60" placeholder="Tên gọi (để trống nếu chưa biết)" autocomplete="off">' +
       '<div class="seg" style="grid-template-columns:1fr 1fr" role="radiogroup">' + ['Nam', 'Nữ'].map(function (x) {
         return '<button class="gtChon' + (x === gt ? ' on' : '') + '" data-viec="gtChon" data-gt="' + x + '" role="radio" aria-checked="' + (x === gt) + '" style="' + (x === gt ? (x === 'Nam' ? 'background:#dcfce7;border-color:#86efac;color:#166534' : 'background:#fce7f3;border-color:#f9a8d4;color:#9d174d') : '') + '">' + x + '</button>';
@@ -673,47 +943,32 @@
       '<div class="hang-nut"><button class="nut" data-viec="dongLop">Huỷ</button><button class="nut xanh" data-viec="luuTen">Lưu</button></div>');
     setTimeout(function () { var o = document.querySelector('.tenTam'); if (o) try { o.focus(); } catch (e) { /* bỏ qua */ } }, 50);
   }
-  function timNguoi(p, ma) {
-    var kq = null;
-    (p.bo || []).forEach(function (b) { b.giuong.forEach(function (g) { if (g.cn && g.cn.ma === ma) kq = { cn: g.cn, g: g }; }); });
-    (p.cho || []).forEach(function (c) { if (c && c.ma === ma) kq = { cn: c, g: null }; });
-    return kq;
-  }
-  /** Áp lượt lên bản trong máy ngay (thấy liền, kể cả mất sóng). */
-  function apCucBo(l) {
-    var x = docDem(l.maDay); if (!x) return;
-    var p = x.phong.filter(function (y) { return y.MaPhong === l.maPhong; })[0]; if (!p) return;
-    p.cho = p.cho || [];
-    if (l.loai === 'xepTenTam') {
-      var moi = { ma: 'tam-' + l.id, ten: l.tenTam || '(chưa biết tên)', gt: l.gioiTinh, cg: true, cho: true };
-      var g = null;
-      (p.bo || []).forEach(function (b) { b.giuong.forEach(function (y) { if (y.ma === l.giuong) g = y; }); });
-      if (g && (!g.cn || (l.nguoiKhac && g.cn.ma === l.nguoiKhac))) { if (g.cn) p.cho.push(g.cn); g.cn = moi; }
-      else p.cho.push(moi);
-    } else if (l.loai === 'xoaTenTam') {
-      (p.bo || []).forEach(function (b) { b.giuong.forEach(function (y) { if (y.cn && y.cn.ma === l.maCho) y.cn = null; }); });
-      p.cho = p.cho.filter(function (c) { return c.ma !== l.maCho; });
-    }
-    luuDem(l.maDay, x);
-  }
-  function guiDem(l, nut) {
-    l.maDay = S.maDay; l.maPhong = S.maPhongDem; l.id = maId(); l.luc = new Date().toISOString();
-    apCucBo(l);
-    var dong = function () { lopDangGui = false; dongLop(); vePhongDem(); };
-    if (nut) { lopDangGui = true; nut.disabled = true; nut.innerHTML = '<i class="xoay"></i> Đang lưu…'; }
+  function xongThaoTac() { dongLop(); vePhongDem(); bip('ok'); }
+  function nopBan(nut) {
+    var p = phongDem(); if (!p) return;
+    var n = banXem(p);
+    var ban = { ky: n.ky, bo: n.bo, so: n.so, g: {}, cho: n.cho.map(function (c) { return c.moi ? { moi: true, ten: c.ten, gt: c.gt, lyDoNu: c.lyDoNu || '' } : { ma: c.ma }; }) };
+    Object.keys(n.g).forEach(function (m) {
+      var o = n.g[m], c = o.cn;
+      if (!c && !o.hong) return;
+      ban.g[m] = { cn: c ? (c.moi ? { moi: true, ten: c.ten, gt: c.gt, lyDoNu: c.lyDoNu || '' } : { ma: c.ma }) : null, hong: !!o.hong, xn: !!o.xn };
+    });
+    var l = { loai: 'nopBanKiemDem', maDay: S.maDay, maPhong: p.MaPhong, taiLuc: n.taiLuc, ban: ban };
+    if (nut) { nut.disabled = true; nut.innerHTML = '<i class="xoay"></i> Đang nộp…'; }
     ghiLuot(l, function (x) {
-      dong();
-      if (x.ket === 'cho') { toast('⏳ Đã lưu trong máy — có sóng tự gửi'); return; }
-      if (!x.ok) { bip('loi'); toast('✗ ' + (x.loi || 'Không ghi được')); }
-      else if (x.lyDo) { bip('canh'); toast('⚠ ' + x.lyDo); }
-      else bip('ok');
-      if (coMang && !coChoDay(S.maDay)) taiDem(S.maDay, true).then(function () { if (S.man === 'demPhong') vePhongDem(); }, function () {});
+      var n2 = docNhap(p.MaPhong) || n;
+      if (x.ket === 'cho') { n2.nop = { luc: l.luc, cho: true }; n2.doi = false; luuNhap(p.MaPhong, n2); toast('⏳ Đã lưu bản trong máy — có sóng tự nộp'); bip('ok'); }
+      else if (x.ok) { n2.nop = { luc: l.luc, maBan: x.maBan }; n2.doi = false; luuNhap(p.MaPhong, n2); toast('✓ Đã nộp bản kiểm đếm ' + p.TenPhong + ' — chờ BQL duyệt'); bip('ok'); }
+      else { bip('loi'); toast('✗ ' + (x.loi || 'Không nộp được')); }
+      if (S.man === 'demPhong') vePhongDem();
     });
   }
 
   // ------------------------------------------------------------------ sự kiện
-  document.addEventListener('click', function (ev) { // D76: đếm sĩ số
-    var b = ev.target.closest('[data-viec]'); if (!b || b.disabled) return;
+  document.addEventListener('click', function (ev) { // đếm sĩ số
+    var b = ev.target.closest('[data-viec]');
+    if (!b && S.suaSd && S.man === 'demPhong') { var oc = ev.target.closest('.sdp-o'); if (oc) suaSd('sdO', oc); return; }
+    if (!b || b.disabled) return;
     var viec = b.getAttribute('data-viec');
     if (viec === 'che') { S.che = b.getAttribute('data-che'); luu(TIEN_TO + 'che', S.che); veDsDot(); }
     else if (viec === 'khuDem') { S.maKhuDem = b.getAttribute('data-khu'); veDsDot(); }
@@ -723,34 +978,71 @@
     }
     else if (viec === 'vaoDayDem') { S.maDay = b.getAttribute('data-day'); nhoDay(S.maDay); diToi('demDay'); }
     else if (viec === 'vaoPhongDem') { S.maPhongDem = b.getAttribute('data-phong'); diToi('demPhong'); }
+    else if (viec === 'xemDem') { luu(TIEN_TO + 'xemDem', b.getAttribute('data-xem')); vePhongDem(); }
+    else if (viec === 'suaSd') { S.suaSd = { chon: '' }; vePhongDem(); }
+    else if (viec === 'sdXong') { S.suaSd = null; vePhongDem(); }
+    else if (viec === 'sdBo') { S.suaSd.chon = S.suaSd.chon === b.getAttribute('data-k') ? '' : b.getAttribute('data-k'); vePhongDem(); }
+    else if (/^sd(Them|Kich|Xoay|Khay|Xoa)$/.test(viec)) suaSd(viec, b);
     else if (viec === 'giuong') {
-      var p = phongDem(), g = null; if (!p) return;
-      p.bo.forEach(function (bo) { bo.giuong.forEach(function (y) { if (y.ma === b.getAttribute('data-g')) g = y; }); });
-      if (!g) return;
-      if (!g.cn) { moNhapTen({ giuong: g.ma, nguoiKhac: '', tieuDe: 'Giường ' + g.ma + ' · ' + g.vi + ' — ai đang nằm?' }); return; }
-      S.giuongXem = g.ma;
-      moLop('<h3>' + thoat(g.ma) + ' · ' + thoat(g.vi) + ' — ' + thoat(g.cn.ten) + '</h3><div class="phu">' + (g.cn.cg ? 'Chưa có hồ sơ' : 'Có hồ sơ') + (g.cn.cho ? ' · đang chờ gửi' : '') + '</div>',
-        '<button class="chon" data-viec="dongLop">✓ Đúng người này</button>' +
-        (g.cn.cho ? '' : '<button class="chon" data-viec="nguoiKhac">↔ Người khác đang nằm giường này</button>') +
-        (g.cn.cg && !g.cn.cho ? '<button class="chon" data-viec="xoaTam" data-ma="' + thoat(g.cn.ma) + '" style="color:#b91c1c">🗑 Xoá tên tạm này (nhập nhầm)</button>' : ''),
+      var p = phongDem(); if (!p) return;
+      var n = banXem(p), m = b.getAttribute('data-g'), o = n.g[m] || {};
+      S.giuongXem = m;
+      if (o.hong) {
+        moLop('<h3>' + m + ' · ' + viCua(m) + ' — đang ghi hỏng</h3>', '<button class="chon" data-viec="hetHong">✓ Giường dùng được (bỏ báo hỏng)</button>', '<div class="hang-nut"><button class="nut vien" data-viec="dongLop">Đóng</button></div>');
+        return;
+      }
+      if (!o.cn) {
+        moNhapTen({ giuong: m, thay: false, tieuDe: 'Giường ' + m + ' · ' + viCua(m) + ' — ai đang nằm?' });
+        var than2 = document.querySelector('.tam-than'); if (than2) than2.insertAdjacentHTML('beforeend', '<button class="chon" data-viec="baoHong" style="margin-top:10px">🛠 Giường này hỏng</button>');
+        return;
+      }
+      moLop('<h3>' + m + ' · ' + viCua(m) + ' — ' + thoat(o.cn.ten) + '</h3><div class="phu">' + (o.cn.moi ? 'Người mới (bạn vừa nhập)' : o.cn.cg ? 'Chưa có hồ sơ' : 'Có hồ sơ') + (o.xn ? ' · đã xác nhận' : '') + '</div>',
+        '<button class="chon' + (o.xn ? ' on' : '') + '" data-viec="dungNguoi">✓ Đúng người này</button>' +
+        '<button class="chon" data-viec="nguoiKhac">↔ Người khác đang nằm giường này</button>' +
+        '<button class="chon" data-viec="trongThat">○ Giường trống thực tế (' + thoat(o.cn.ten) + ' về "Chưa có giường")</button>' +
+        '<button class="chon" data-viec="baoHong">🛠 Giường này hỏng</button>' +
+        (o.cn.moi ? '<button class="chon" data-viec="xoaMoi" data-ma="' + thoat(o.cn.ma) + '" style="color:#b91c1c">🗑 Xoá tên này (nhập nhầm)</button>' : ''),
         '<div class="hang-nut"><button class="nut vien" data-viec="dongLop">Đóng</button></div>');
     }
+    else if (viec === 'dungNguoi') { suaNhap(function (n) { var o = n.g[S.giuongXem]; if (o && o.cn) o.xn = true; }); xongThaoTac(); }
+    else if (viec === 'trongThat') { suaNhap(function (n) { veHangCho2(n, S.giuongXem); donGiuong(n, S.giuongXem); }); xongThaoTac(); }
+    else if (viec === 'baoHong') { suaNhap(function (n) { veHangCho2(n, S.giuongXem); n.g[S.giuongXem] = { cn: null, hong: true }; }); xongThaoTac(); }
+    else if (viec === 'hetHong') { suaNhap(function (n) { var o = n.g[S.giuongXem]; if (o) o.hong = false; donGiuong(n, S.giuongXem); }); xongThaoTac(); }
     else if (viec === 'nguoiKhac') {
-      var p2 = phongDem(), g2 = null;
-      p2.bo.forEach(function (bo) { bo.giuong.forEach(function (y) { if (y.ma === S.giuongXem) g2 = y; }); });
-      var cu = g2 && g2.cn ? g2.cn : null;
+      var cu = (banXem(phongDem()).g[S.giuongXem] || {}).cn;
       $('lop').innerHTML = '';
-      moNhapTen({ giuong: S.giuongXem, nguoiKhac: cu ? cu.ma : '', tieuDe: 'Giường ' + S.giuongXem + ' — người đang nằm thật' + (cu ? ' (' + cu.ten + ' sẽ về "Chưa có giường")' : '') });
+      moNhapTen({ giuong: S.giuongXem, thay: true, tieuDe: 'Giường ' + S.giuongXem + ' — người đang nằm thật' + (cu ? ' (' + cu.ten + ' về "Chưa có giường")' : '') });
+    }
+    else if (viec === 'xepCho') { // người đang ở hàng chờ của bản → nằm giường đang mở
+      var maX = b.getAttribute('data-ma'), gX = S.nhap && S.nhap.giuong;
+      suaNhap(function (n) {
+        var c = n.cho.filter(function (y) { return y.ma === maX; })[0]; if (!c || !gX) return;
+        boNguoiKhoiCho(n, maX);
+        if (S.nhap.thay) veHangCho2(n, gX);
+        n.g[gX] = { cn: c, hong: false, xn: true };
+      });
+      xongThaoTac();
     }
     else if (viec === 'nguoiCho') {
-      var p3 = phongDem(), t = p3 ? timNguoi(p3, b.getAttribute('data-ma')) : null; if (!t) return;
-      moLop('<h3>' + thoat(t.cn.ten) + '</h3><div class="phu">' + (t.cn.cg ? 'Chưa có hồ sơ' : 'Có hồ sơ') + ' · chưa có giường</div>',
-        '<div class="phu" style="margin:6px 0">Xếp giường cho người có hồ sơ: làm trong app (tab 🛏 Giường).</div>' +
-        (t.cn.cg && !t.cn.cho ? '<button class="chon" data-viec="xoaTam" data-ma="' + thoat(t.cn.ma) + '" style="color:#b91c1c">🗑 Xoá tên tạm này (nhập nhầm)</button>' : ''),
+      var p3 = phongDem(), n3 = banXem(p3), c3 = timNguoiNhap(n3, b.getAttribute('data-ma')); if (!c3) return;
+      var trong = boXep(n3).reduce(function (a, bo) { return a.concat(maCuaBo(bo)); }, []).filter(function (m) { var o = n3.g[m]; return !o || (!o.cn && !o.hong && !o.giu); });
+      moLop('<h3>' + thoat(c3.ten) + '</h3><div class="phu">' + (c3.moi ? 'Người mới' : c3.cg ? 'Chưa có hồ sơ' : 'Có hồ sơ') + ' · chưa có giường</div>',
+        (trong.length ? '<div class="phu" style="margin:6px 0">Đang nằm giường nào? Bấm để xếp:</div><div class="chips" style="flex-wrap:wrap">' + trong.map(function (m) {
+          return '<button class="chip" data-viec="xepVao" data-ma="' + thoat(c3.ma) + '" data-g="' + m + '">' + m + ' · ' + viCua(m) + '</button>'; }).join('') + '</div>' : '<div class="phu" style="margin:6px 0">Không còn giường trống.</div>') +
+        (c3.moi ? '<button class="chon" data-viec="xoaMoi" data-ma="' + thoat(c3.ma) + '" style="color:#b91c1c">🗑 Xoá tên này (nhập nhầm)</button>' : ''),
         '<div class="hang-nut"><button class="nut vien" data-viec="dongLop">Đóng</button></div>');
     }
-    else if (viec === 'xoaTam') guiDem({ loai: 'xoaTenTam', maCho: b.getAttribute('data-ma') }, b);
-    else if (viec === 'themNgoai') moNhapTen({ giuong: '', nguoiKhac: '', tieuDe: phongDem() && phongDem().coBoTri ? 'Người chưa có giường (nằm đất / ở ghép)' : 'Thêm người trong phòng' });
+    else if (viec === 'xepVao') {
+      var maV = b.getAttribute('data-ma'), gV = b.getAttribute('data-g');
+      suaNhap(function (n) { var c = n.cho.filter(function (y) { return y.ma === maV; })[0]; if (!c) return; boNguoiKhoiCho(n, maV); n.g[gV] = { cn: c, hong: false, xn: true }; });
+      xongThaoTac();
+    }
+    else if (viec === 'xoaMoi') {
+      var maM = b.getAttribute('data-ma');
+      suaNhap(function (n) { boNguoiKhoiCho(n, maM); var g = giuongCuaNguoi(n, maM); if (g) { n.g[g].cn = null; n.g[g].xn = false; donGiuong(n, g); } });
+      xongThaoTac();
+    }
+    else if (viec === 'themNgoai') moNhapTen({ giuong: '', thay: false, tieuDe: banXem(phongDem()).bo.length ? 'Người chưa có giường (nằm đất / ở ghép)' : 'Thêm người trong phòng' });
     else if (viec === 'gtChon') {
       document.querySelectorAll('.gtChon').forEach(function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on));
         x.style.cssText = on ? (x.getAttribute('data-gt') === 'Nam' ? 'background:#dcfce7;border-color:#86efac;color:#166534' : 'background:#fce7f3;border-color:#f9a8d4;color:#9d174d') : ''; });
@@ -762,12 +1054,20 @@
       var pp = phongDem();
       if (pp && pp.PhongNu && gt === 'Nam' && !ly) { loiL.textContent = 'Phòng nữ — ghi lý do xếp Nam vào.'; loiL.hidden = false; return; }
       luu(TIEN_TO + 'gtNho', gt);
-      guiDem({ loai: 'xepTenTam', giuong: S.nhap.giuong, nguoiKhac: S.nhap.nguoiKhac, gioiTinh: gt, tenTam: ((document.querySelector('.tenTam') || {}).value || '').trim(), lyDoNu: ly }, b);
+      var ten = ((document.querySelector('.tenTam') || {}).value || '').trim(), nh = S.nhap;
+      suaNhap(function (n) {
+        var moi = { moi: true, ma: 'moi-' + maId(), ten: ten || '(chưa biết tên)', gt: gt, lyDoNu: ly };
+        if (!nh.giuong) { n.cho.push(moi); return; }
+        if (nh.thay) veHangCho2(n, nh.giuong);
+        n.g[nh.giuong] = { cn: moi, hong: false, xn: false };
+      });
+      xongThaoTac();
     }
-    else if (viec === 'xongDem') {
-      var dd = daDem(); dd.p[S.maPhongDem] = true; luu(TIEN_TO + 'daDem', JSON.stringify(dd));
-      bip('ok'); toast('✓ Đã đếm xong ' + (phongDem() ? phongDem().TenPhong : '')); history.back();
+    else if (viec === 'boNhap') {
+      if (b.getAttribute('data-hoi') !== '1') { b.setAttribute('data-hoi', '1'); b.textContent = 'Bấm lần nữa để bỏ bản nháp'; return; }
+      luuNhap(S.maPhongDem, null); toast('Đã lấy lại bản app'); vePhongDem();
     }
+    else if (viec === 'nopBan') nopBan(b);
   });
   document.addEventListener('change', function (ev) {
     if (ev.target.classList.contains('ttCa')) { document.querySelectorAll('.ttCb').forEach(function (x) { x.checked = ev.target.checked; }); demTay(); }
