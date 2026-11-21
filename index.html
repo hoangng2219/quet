@@ -179,18 +179,15 @@
   .day-duoi .trong .nut { white-space:nowrap; font-size:14.5px; }
   .day-duoi .nut-phu { padding:10px 12px; }
   /* D77.2: mỗi bộ = 2 dòng giường (trên / dưới) chiếm cả bề ngang bộ — tên không bị bóp còn 1 ô */
-  .sdq.sdp-vo { padding:2px 12px 4px; }
+  .sdq.sdp-vo { padding:2px 10px 4px; }
   .sdq .sdp-bo-trong { flex-direction:column !important; padding:2px; gap:2px; }
   .gi.gi-m { flex:1 1 0; min-height:0; width:100%; flex-direction:row; align-items:center; justify-content:flex-start; gap:3px; padding:0 4px; overflow:hidden; border-radius:5px; }
   .gi.gi-m small { flex:none; font-size:10px; }
   .gi.gi-m b { flex:1 1 auto; min-width:0; font-size:12.5px; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
   .gi.gi-m.trong { justify-content:flex-start; } .gi.gi-m.trong b { font-size:18px; text-align:center; }
   .sdq .sdp-doc .gi.gi-m { flex-direction:column; align-items:flex-start; justify-content:center; gap:0; padding:2px 3px; }
-  .sdq .sdp-doc .gi.gi-m { overflow:visible; padding:2px 1px; }
-  .sdq .sdp-doc .gi.gi-m b { width:100%; font-size:11px; letter-spacing:-.4px; overflow:visible; text-overflow:clip; }
-  .sdq .sdp-doc .gi.gi-m.trong b { text-align:left; }
-  .sdq .sdq-phai .gi.gi-m { align-items:flex-end; } .sdq .sdq-phai .gi.gi-m b { direction:rtl; text-align:right; }
-  .sdq .sdp-doc .gi.gi-m b { position:relative; z-index:2; text-shadow:0 0 2px #fff, 0 0 2px #fff; }
+  .sdq .sdp-doc .gi.gi-m { padding:2px 4px; }
+  .sdq .sdp-doc .gi.gi-m b { width:100%; font-size:12px; }
 </style>
 </head>
 <body>
@@ -867,16 +864,37 @@
       m + (nho ? '' : ' · ' + viCua(m)) + (o.xn ? ' ✓' : '') + '</small><b>' + chu + '</b></button>';
   }
   function veBoThe(n, b) { return '<div class="bo"><div class="bo-ten">' + tenBo(b) + (b.keThem ? ' · kê thêm' : '') + '</div><div class="bo-g">' + maCuaBo(b).map(function (m) { return oGiuong(n, m); }).join('') + '</div></div>'; }
+  /**
+   * D77.3 — sơ đồ cho màn ĐẾM: vẫn đúng vị trí bộ như app, nhưng cột / hàng TRỐNG (giữa phòng) được thu hẹp để cột / hàng có giường rộng ra
+   * (điện thoại 10 cột chỉ ~33px / cột → tên bị cắt; Safari cắt chữ tràn khỏi nút nên không thể cho tràn). Chỉ dùng để XEM + bấm giường;
+   * màn sửa sơ đồ vẫn dùng lưới đều của KTXSoDo.
+   */
   function veSoDoDem(n) {
-    var SD = window.KTXSoDo, sd = n.so, tren = '', khay = [];
-    boXep(n).forEach(function (b) {
-      var vt = sd.vt[khoaBo(b)];
-      if (!vt) { khay.push(b); return; }
-      var phai = vt.xoay === 'doc' && vt.x >= sd.cot / 2; // bộ dọc sát tường phải: tên dài tràn vào giữa phòng (không đè lên tường)
-      tren += '<div class="sdp-bo sdp-' + (vt.xoay === 'doc' ? 'doc' : 'ngang') + (phai ? ' sdq-phai' : '') + (b.keThem ? ' sdp-ke-them' : '') + '" style="' + SD.viTri(sd, vt) + '"><div class="sdp-bo-trong">' + maCuaBo(b).slice().reverse().map(function (m) { return oGiuong(n, m, true); }).join('') + '</div></div>'; // giường trên (B) phía trên giường dưới (A): 2 dòng, tên dùng cả bề ngang bộ
-    });
-    var hep = (window.innerWidth || 400) < 640; // điện thoại: ô cao → mỗi giường 1 dòng đủ cao để bấm
-    return SD.khung(sd, tren, { toiDa: hep ? 90 : 64, tyLe: hep ? 2.4 : 1.4, lop: 'sdq' }) + (khay.length ? '<div class="phu" style="margin:10px 2px 4px">Chưa đặt lên sơ đồ</div>' + khay.map(function (b) { return veBoThe(n, b); }).join('') : '');
+    var SD = window.KTXSoDo, sd = n.so, khay = [], dat = [];
+    boXep(n).forEach(function (b) { var vt = sd.vt[khoaBo(b)]; if (vt) dat.push({ b: b, vt: vt }); else khay.push(b); });
+    var cotCo = [], hangCo = [], i;
+    for (i = 0; i < sd.cot; i++) cotCo.push(false);
+    for (i = 0; i < sd.hang; i++) hangCo.push(false);
+    var cotDoc = cotCo.slice(); // cột có bộ đặt dọc: bộ dọc chỉ rộng 1 cột → cho cột đó rộng hơn để tên giường đủ chỗ
+    dat.forEach(function (x) { var q = SD.kho(x.vt.xoay), a, c; for (a = 0; a < q.w; a++) cotCo[x.vt.x + a] = true; for (c = 0; c < q.h; c++) hangCo[x.vt.y + c] = true; if (x.vt.xoay === 'doc') cotDoc[x.vt.x] = true; });
+    var cw = cotCo.map(function (co, k) { return cotDoc[k] ? 1.5 : co ? 1 : 0.25; }), rh = hangCo.map(function (co) { return co ? 1 : 0.45; });
+    var tongC = cw.reduce(function (s, v) { return s + v; }, 0), tongH = rh.reduce(function (s, v) { return s + v; }, 0);
+    var tu = function (ds, den) { var s = 0; for (var k = 0; k < den; k++) s += ds[k]; return s; };
+    var hep = (window.innerWidth || 400) < 640;
+    var caoO = hep ? 1.9 : 1.2; // chiều cao 1 hàng có giường / bề rộng 1 cột có giường
+    var pct = function (v) { return (v * 100).toFixed(4) + '%'; };
+    var bo = dat.map(function (x) {
+      var q = SD.kho(x.vt.xoay);
+      var st = 'left:' + pct(tu(cw, x.vt.x) / tongC) + ';width:' + pct(tu(cw, x.vt.x + q.w) / tongC - tu(cw, x.vt.x) / tongC) +
+        ';top:' + pct(tu(rh, x.vt.y) / tongH) + ';height:' + pct(tu(rh, x.vt.y + q.h) / tongH - tu(rh, x.vt.y) / tongH);
+      return '<div class="sdp-bo sdp-' + (x.vt.xoay === 'doc' ? 'doc' : 'ngang') + (x.b.keThem ? ' sdp-ke-them' : '') + '" style="' + st + '"><div class="sdp-bo-trong">' +
+        maCuaBo(x.b).slice().reverse().map(function (m) { return oGiuong(n, m, true); }).join('') + '</div></div>'; // giường trên (B) phía trên giường dưới (A)
+    }).join('');
+    var cuaTu = Math.max(0, sd.hang - 3), cuaTop = tu(rh, cuaTu) / tongH, cuaCao = (tu(rh, Math.min(sd.hang, cuaTu + 2)) - tu(rh, cuaTu)) / tongH;
+    var cua = function (ben) { return '<div class="sdp-cua sdp-cua-' + ben + '" style="top:' + pct(cuaTop) + ';height:' + pct(cuaCao) + '"><span>Cửa</span></div>'; };
+    return '<div class="sdp-vo sdq"><div class="sdp-phong" style="max-width:' + Math.round(tongC * (hep ? 120 : 80)) + 'px"><div style="padding-top:' + pct(tongH * caoO / tongC) + '"></div>' +
+      cua('trai') + cua('phai') + bo + '</div></div>' +
+      (khay.length ? '<div class="phu" style="margin:10px 2px 4px">Chưa đặt lên sơ đồ</div>' + khay.map(function (b) { return veBoThe(n, b); }).join('') : '');
   }
   function vePhongDem() {
     var p = phongDem();
